@@ -1,0 +1,29 @@
+# Maven
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+/.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+src/main/java/com/coffeeshop/database/
+*.db
+
+# Logs
+*.log
+
+# Environment
+.env
+
+# VSCode
+.vscode/
+
+# Others
+*.class
