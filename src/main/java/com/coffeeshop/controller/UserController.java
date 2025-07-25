@@ -1,6 +1,6 @@
 package com.coffeeshop.controller;
 
-import com.coffeeshop.dto.UserDTO;
+import com.coffeeshop.dto.admin.response.UserDTO;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

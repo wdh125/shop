@@ -1,6 +1,6 @@
 package com.coffeeshop.service;
 
-import com.coffeeshop.dto.OrderRequestDTO;
+import com.coffeeshop.dto.admin.request.OrderRequestDTO;
 import com.coffeeshop.entity.*;
 import com.coffeeshop.enums.OrderItemStatus;
 import com.coffeeshop.enums.OrderStatus;

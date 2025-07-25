@@ -2,7 +2,7 @@ package com.coffeeshop.dto;
 
 import java.time.LocalDateTime;
 
-public class ReservationDetailDTO {
+public class Old_ReservationDetailDTO {
     private Integer id;
     private CustomerInfo customer;
     private TableInfo table;
@@ -12,7 +12,7 @@ public class ReservationDetailDTO {
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private OrderSummaryDTO order; // Có thể null nếu chưa có đơn
+    private com.coffeeshop.dto.customer.response.ReservationDetailDTO.OrderSummaryDTO order; // Có thể null nếu chưa có đơn
 
     // Getters and Setters
     public Integer getId() { return id; }
@@ -33,8 +33,8 @@ public class ReservationDetailDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    public OrderSummaryDTO getOrder() { return order; }
-    public void setOrder(OrderSummaryDTO order) { this.order = order; }
+    public com.coffeeshop.dto.customer.response.ReservationDetailDTO.OrderSummaryDTO getOrder() { return order; }
+    public void setOrder(com.coffeeshop.dto.customer.response.ReservationDetailDTO.OrderSummaryDTO order) { this.order = order; }
 
     public static class CustomerInfo {
         private Integer id;

@@ -1,6 +1,6 @@
 package com.coffeeshop.service;
 
-import com.coffeeshop.dto.PaymentRequestDTO;
+import com.coffeeshop.dto.admin.request.PaymentRequestDTO;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.Payment;
 import com.coffeeshop.entity.User;

@@ -2,7 +2,7 @@ package com.coffeeshop.dto;
 
 import java.time.LocalDateTime;
 
-public class TableReservationStatusDTO {
+public class Old_TableReservationStatusDTO {
     private Integer tableId;
     private String tableNumber;
     private LocalDateTime reservationDatetime;

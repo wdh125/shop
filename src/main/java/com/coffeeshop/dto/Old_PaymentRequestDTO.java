@@ -3,7 +3,7 @@ package com.coffeeshop.dto;
 import com.coffeeshop.enums.PaymentMethod;
 import com.coffeeshop.enums.PaymentProcessStatus;
 
-public class PaymentRequestDTO {
+public class Old_PaymentRequestDTO {
     private Integer orderId;
     private PaymentMethod paymentMethod;
     private Integer paidByUserId;

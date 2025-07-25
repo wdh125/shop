@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import com.coffeeshop.entity.Product;
 import java.util.Map;
-import com.coffeeshop.dto.CategoryDTO;
-import com.coffeeshop.dto.ProductDTO;
+import com.coffeeshop.dto.admin.response.CategoryDTO;
+import com.coffeeshop.dto.admin.response.ProductDTO;
 
 @RestController
 @RequestMapping("/api/categories")

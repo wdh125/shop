@@ -1,4 +1,4 @@
-package com.coffeeshop.dto;
+package com.coffeeshop.dto.customer.response;
 
 import java.math.BigDecimal;
 
@@ -8,7 +8,6 @@ public class OrderItemResponseDTO {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
-    // getter, setter
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getProductName() { return productName; }

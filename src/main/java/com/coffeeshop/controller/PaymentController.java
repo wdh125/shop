@@ -1,7 +1,7 @@
 package com.coffeeshop.controller;
 
-import com.coffeeshop.dto.PaymentRequestDTO;
-import com.coffeeshop.dto.PaymentResponseDTO;
+import com.coffeeshop.dto.admin.request.PaymentRequestDTO;
+import com.coffeeshop.dto.admin.response.PaymentResponseDTO;
 import com.coffeeshop.entity.Payment;
 import com.coffeeshop.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,8 +2,6 @@ package com.coffeeshop.controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coffeeshop.entity.Product;
 import com.coffeeshop.service.ProductService;
-import com.coffeeshop.dto.ProductDTO;
+import com.coffeeshop.dto.admin.response.ProductDTO;
 
 @RestController
 @RequestMapping("/api/products")

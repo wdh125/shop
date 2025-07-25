@@ -2,7 +2,7 @@ package com.coffeeshop.dto;
 
 import java.util.List;
 
-public class OrderRequestDTO {
+public class Old_OrderRequestDTO {
 	private Integer tableId; // Tùy chọn nếu có reservationId
 	private Integer userId; // Tùy chọn nếu có reservationId
 	private Integer reservationId; // Tùy chọn, dùng cho việc đặt món trước
@@ -42,5 +42,4 @@ public class OrderRequestDTO {
 			this.quantity = quantity;
 		}
 	}
-
 }

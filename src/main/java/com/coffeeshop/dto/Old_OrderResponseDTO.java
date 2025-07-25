@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class OrderResponseDTO {
+public class Old_OrderResponseDTO {
     private Integer id;
     private String orderNumber;
     private BigDecimal subtotal;
@@ -23,7 +23,7 @@ public class OrderResponseDTO {
     private LocalDateTime updatedAt;
     private CustomerInfo customer;
     private TableInfo table;
-    private List<OrderItemResponseDTO> items;
+    private List<com.coffeeshop.dto.customer.response.OrderItemResponseDTO> items;
     private Integer reservationId; // null nếu là đơn thường
 
     // Getters and Setters
@@ -55,8 +55,8 @@ public class OrderResponseDTO {
     public void setCustomer(CustomerInfo customer) { this.customer = customer; }
     public TableInfo getTable() { return table; }
     public void setTable(TableInfo table) { this.table = table; }
-    public List<OrderItemResponseDTO> getItems() { return items; }
-    public void setItems(List<OrderItemResponseDTO> items) { this.items = items; }
+    public List<com.coffeeshop.dto.customer.response.OrderItemResponseDTO> getItems() { return items; }
+    public void setItems(List<com.coffeeshop.dto.customer.response.OrderItemResponseDTO> items) { this.items = items; }
     public Integer getReservationId() { return reservationId; }
     public void setReservationId(Integer reservationId) { this.reservationId = reservationId; }
 
