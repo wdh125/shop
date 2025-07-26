@@ -3,6 +3,8 @@ package com.coffeeshop.service;
 import com.coffeeshop.dto.admin.request.AdminPaymentRequestDTO;
 import com.coffeeshop.dto.customer.request.CustomerPaymentRequestDTO;
 import com.coffeeshop.dto.admin.request.AdminPaymentStatusUpdateDTO;
+import com.coffeeshop.dto.admin.response.AdminPaymentResponseDTO;
+import com.coffeeshop.dto.customer.response.CustomerPaymentResponseDTO;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.Payment;
 import com.coffeeshop.entity.User;
@@ -100,52 +102,7 @@ public class PaymentService {
         return savedPayment;
     }
 
-    public Payment createPaymentForCustomer(CustomerPaymentRequestDTO request) {
-        // Lấy user hiện tại
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Kiểm tra order tồn tại và thuộc về user
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        if (!order.getCustomer().getId().equals(user.getId())) {
-            throw new RuntimeException("Bạn chỉ có thể thanh toán đơn của mình!");
-        }
-        // Kiểm tra trạng thái đơn
-        if (!order.getStatus().isAllowPayment()) {
-            throw new RuntimeException("Đơn hàng không ở trạng thái cho phép thanh toán!");
-        }
-        // Kiểm tra số tiền hợp lệ
-        if (request.getAmount() == null || request.getAmount() <= 0) {
-            throw new RuntimeException("Số tiền không hợp lệ!");
-        }
-        // Kiểm tra phương thức thanh toán hợp lệ
-        PaymentMethod method;
-        try {
-            method = PaymentMethod.valueOf(request.getPaymentMethod());
-        } catch (Exception e) {
-            throw new RuntimeException("Phương thức thanh toán không hợp lệ!");
-        }
-        // Tạo payment
-        Payment payment = new Payment();
-        payment.setOrder(order);
-        payment.setAmount(java.math.BigDecimal.valueOf(request.getAmount()));
-        payment.setPaymentMethod(method);
-        // Không có setNote, nếu có setNotes thì dùng, nếu không thì bỏ qua
-        payment.setStatus(method == PaymentMethod.CASH ? PaymentProcessStatus.FAILED : PaymentProcessStatus.COMPLETED);
-        payment.setCreatedAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
-        payment.setProcessedBy(user);
-        paymentRepository.save(payment);
-        // Nếu là CARD/QR_CODE thì cập nhật order đã thanh toán
-        if (method != PaymentMethod.CASH) {
-            order.setStatus(order.getStatus().nextAfterPayment());
-            order.setPaymentStatus(PaymentStatus.PAID);
-            orderRepository.save(order);
-        }
-        return payment;
-    }
+    // Đã chuyển thành createPaymentForCustomerEntity phía dưới
 
     public Payment updatePaymentStatusByAdmin(Integer id, AdminPaymentStatusUpdateDTO request) {
         // Lấy user hiện tại
@@ -202,6 +159,112 @@ public class PaymentService {
 
     public List<Payment> getPaymentsByOrderId(Integer orderId) {
         return paymentRepository.findByOrder_Id(orderId);
+    }
+
+    // --- DTO Service Methods ---
+    public List<AdminPaymentResponseDTO> getAllAdminPaymentDTOs() {
+        return getAllPayments().stream().map(this::toAdminPaymentResponseDTO).toList();
+    }
+
+    public AdminPaymentResponseDTO getAdminPaymentDTOById(Integer id) {
+        Payment payment = getPaymentById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy payment!"));
+        return toAdminPaymentResponseDTO(payment);
+    }
+
+    public List<CustomerPaymentResponseDTO> getCustomerPaymentDTOsByCustomerId(Integer customerId) {
+        return getPaymentsByCustomerId(customerId).stream().map(this::toCustomerPaymentResponseDTO).toList();
+    }
+
+    public List<CustomerPaymentResponseDTO> getCustomerPaymentDTOsByOrderId(Integer orderId) {
+        return getPaymentsByOrderId(orderId).stream().map(this::toCustomerPaymentResponseDTO).toList();
+    }
+
+    public AdminPaymentResponseDTO updatePaymentStatusByAdminAndReturnDTO(Integer id, AdminPaymentStatusUpdateDTO request) {
+        Payment payment = updatePaymentStatusByAdmin(id, request);
+        return toAdminPaymentResponseDTO(payment);
+    }
+
+    public CustomerPaymentResponseDTO createPaymentForCustomer(CustomerPaymentRequestDTO request) {
+        Payment payment = createPaymentForCustomerEntity(request);
+        return toCustomerPaymentResponseDTO(payment);
+    }
+
+    // --- Helper mapping methods ---
+    private AdminPaymentResponseDTO toAdminPaymentResponseDTO(Payment payment) {
+        AdminPaymentResponseDTO dto = new AdminPaymentResponseDTO();
+        dto.setId(payment.getId());
+        dto.setOrderId(payment.getOrder() != null ? payment.getOrder().getId() : null);
+        AdminPaymentResponseDTO.CustomerInfo customer = new AdminPaymentResponseDTO.CustomerInfo();
+        if (payment.getOrder() != null && payment.getOrder().getCustomer() != null) {
+            customer.setId(payment.getOrder().getCustomer().getId());
+            customer.setUsername(payment.getOrder().getCustomer().getUsername());
+            customer.setFullName(payment.getOrder().getCustomer().getFullName());
+            customer.setPhone(payment.getOrder().getCustomer().getPhone());
+        }
+        dto.setCustomer(customer);
+        dto.setAmount(payment.getAmount() != null ? payment.getAmount().doubleValue() : null);
+        dto.setPaymentMethod(payment.getPaymentMethod() != null ? payment.getPaymentMethod().name() : null);
+        dto.setStatus(payment.getStatus() != null ? payment.getStatus().name() : null);
+        dto.setCreatedAt(payment.getCreatedAt());
+        dto.setUpdatedAt(payment.getUpdatedAt());
+        return dto;
+    }
+    private CustomerPaymentResponseDTO toCustomerPaymentResponseDTO(Payment payment) {
+        CustomerPaymentResponseDTO dto = new CustomerPaymentResponseDTO();
+        dto.setId(payment.getId());
+        dto.setOrderId(payment.getOrder() != null ? payment.getOrder().getId() : null);
+        dto.setAmount(payment.getAmount() != null ? payment.getAmount().doubleValue() : null);
+        dto.setPaymentMethod(payment.getPaymentMethod() != null ? payment.getPaymentMethod().name() : null);
+        dto.setStatus(payment.getStatus() != null ? payment.getStatus().name() : null);
+        dto.setCreatedAt(payment.getCreatedAt());
+        dto.setUpdatedAt(payment.getUpdatedAt());
+        return dto;
+    }
+
+    // --- Helper: giữ lại logic cũ cho entity ---
+    public Payment createPaymentForCustomerEntity(CustomerPaymentRequestDTO request) {
+        // Lấy user hiện tại
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        // Kiểm tra order tồn tại và thuộc về user
+        Order order = orderRepository.findById(request.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        if (!order.getCustomer().getId().equals(user.getId())) {
+            throw new RuntimeException("Bạn chỉ có thể thanh toán đơn của mình!");
+        }
+        // Kiểm tra trạng thái đơn
+        if (!order.getStatus().isAllowPayment()) {
+            throw new RuntimeException("Đơn hàng không ở trạng thái cho phép thanh toán!");
+        }
+        // Kiểm tra số tiền hợp lệ
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            throw new RuntimeException("Số tiền không hợp lệ!");
+        }
+        // Kiểm tra phương thức thanh toán hợp lệ
+        PaymentMethod method;
+        try {
+            method = PaymentMethod.valueOf(request.getPaymentMethod());
+        } catch (Exception e) {
+            throw new RuntimeException("Phương thức thanh toán không hợp lệ!");
+        }
+        // Tạo payment
+        Payment payment = new Payment();
+        payment.setOrder(order);
+        payment.setAmount(java.math.BigDecimal.valueOf(request.getAmount()));
+        payment.setPaymentMethod(method);
+        payment.setStatus(method == PaymentMethod.CASH ? PaymentProcessStatus.FAILED : PaymentProcessStatus.COMPLETED);
+        payment.setCreatedAt(LocalDateTime.now());
+        payment.setUpdatedAt(LocalDateTime.now());
+        payment.setProcessedBy(user);
+        paymentRepository.save(payment);
+        // Nếu là CARD/QR_CODE thì cập nhật order đã thanh toán
+        if (method != PaymentMethod.CASH) {
+            order.setStatus(order.getStatus().nextAfterPayment());
+            order.setPaymentStatus(PaymentStatus.PAID);
+            orderRepository.save(order);
+        }
+        return payment;
     }
 
     // --- Helper Methods ---

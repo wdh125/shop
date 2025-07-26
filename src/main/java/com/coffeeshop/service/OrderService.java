@@ -1,10 +1,14 @@
 package com.coffeeshop.service;
 
 import com.coffeeshop.dto.admin.request.AdminOrderRequestDTO;
+import com.coffeeshop.dto.admin.response.AdminOrderResponseDTO;
+import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
+import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.shared.OrderItemDTO;
 import com.coffeeshop.entity.*;
 import com.coffeeshop.enums.OrderItemStatus;
 import com.coffeeshop.enums.OrderStatus;
+import com.coffeeshop.enums.PaymentMethod;
 import com.coffeeshop.enums.PaymentStatus;
 import com.coffeeshop.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service chứa các logic nghiệp vụ liên quan đến Order.
@@ -195,5 +200,133 @@ public class OrderService {
         }
         item.setUpdatedAt(java.time.LocalDateTime.now());
         return orderItemRepository.save(item);
+    }
+
+    // --- DTO methods for controller ---
+    public CustomerOrderResponseDTO createOrderWithItems(CustomerOrderRequestDTO dto, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        AdminOrderRequestDTO adminRequest = new AdminOrderRequestDTO();
+        adminRequest.setTableId(dto.getTableId());
+        adminRequest.setUserId(user.getId());
+        adminRequest.setReservationId(dto.getReservationId());
+        adminRequest.setNote(dto.getNote());
+        adminRequest.setItems(dto.getItems());
+        Order order = createOrderWithItems(adminRequest);
+        return toCustomerOrderResponseDTO(order);
+    }
+
+    public AdminOrderResponseDTO createOrderWithItemsAdmin(AdminOrderRequestDTO dto) {
+        Order order = createOrderWithItems(dto);
+        return toAdminOrderResponseDTO(order);
+    }
+
+    public List<AdminOrderResponseDTO> getAllAdminOrderDTOs() {
+        return getAllOrders().stream()
+                .map(this::toAdminOrderResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public AdminOrderResponseDTO getAdminOrderDTOById(Integer id) {
+        Order order = getOrderById(id);
+        return toAdminOrderResponseDTO(order);
+    }
+
+    public AdminOrderResponseDTO updateOrderStatusAndReturnDTO(Integer id, OrderStatus status) {
+        Order updatedOrder = updateOrderStatus(id, status);
+        return toAdminOrderResponseDTO(updatedOrder);
+    }
+
+    public List<AdminOrderResponseDTO> filterOrders(OrderStatus status, Integer tableId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Order> orders;
+        if (status != null && tableId != null) {
+            TableEntity table = tableRepository.findById(tableId)
+                    .orElseThrow(() -> new RuntimeException("Table not found"));
+            orders = filterOrdersByStatusAndTable(status, table);
+        } else if (status != null && startDate != null && endDate != null) {
+            orders = filterOrdersByStatusAndDateRange(status, startDate, endDate);
+        } else if (status != null) {
+            orders = filterOrdersByStatus(status);
+        } else if (tableId != null) {
+            orders = filterOrdersByTable(tableId);
+        } else if (startDate != null && endDate != null) {
+            orders = filterOrdersByDateRange(startDate, endDate);
+        } else {
+            orders = getAllOrders();
+        }
+        return orders.stream().map(this::toAdminOrderResponseDTO).collect(Collectors.toList());
+    }
+
+    public AdminOrderResponseDTO updatePaymentMethodAndReturnDTO(Integer id, PaymentMethod method) {
+        Order order = updatePaymentMethod(id, method);
+        return toAdminOrderResponseDTO(order);
+    }
+
+    // --- Mapping methods ---
+    private AdminOrderResponseDTO toAdminOrderResponseDTO(Order order) {
+        AdminOrderResponseDTO dto = new AdminOrderResponseDTO();
+        dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
+        // Customer info
+        AdminOrderResponseDTO.CustomerInfo customer = new AdminOrderResponseDTO.CustomerInfo();
+        customer.setId(order.getCustomer().getId());
+        customer.setUsername(order.getCustomer().getUsername());
+        customer.setFullName(order.getCustomer().getFullName());
+        customer.setPhone(order.getCustomer().getPhone());
+        dto.setCustomer(customer);
+        // Table info
+        AdminOrderResponseDTO.TableInfo table = new AdminOrderResponseDTO.TableInfo();
+        table.setId(order.getTable().getId());
+        table.setTableNumber(order.getTable().getTableNumber());
+        table.setLocation(order.getTable().getLocation());
+        dto.setTable(table);
+        dto.setReservationId(order.getReservation() != null ? order.getReservation().getId() : null);
+        dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
+        dto.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null);
+        dto.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null);
+        dto.setNotes(order.getNotes());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
+        // Items
+        List<AdminOrderResponseDTO.OrderItemInfo> items = getOrderItemsByOrderId(order.getId()).stream().map(item -> {
+            AdminOrderResponseDTO.OrderItemInfo oi = new AdminOrderResponseDTO.OrderItemInfo();
+            oi.setId(item.getId());
+            oi.setProductName(item.getProduct().getName());
+            oi.setQuantity(item.getQuantity());
+            oi.setUnitPrice(item.getUnitPrice() != null ? item.getUnitPrice().doubleValue() : null);
+            oi.setTotalPrice(item.getTotalPrice() != null ? item.getTotalPrice().doubleValue() : null);
+            return oi;
+        }).collect(Collectors.toList());
+        dto.setItems(items);
+        return dto;
+    }
+    private CustomerOrderResponseDTO toCustomerOrderResponseDTO(Order order) {
+        CustomerOrderResponseDTO dto = new CustomerOrderResponseDTO();
+        dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
+        // Table info
+        CustomerOrderResponseDTO.TableInfo table = new CustomerOrderResponseDTO.TableInfo();
+        table.setId(order.getTable().getId());
+        table.setTableNumber(order.getTable().getTableNumber());
+        table.setLocation(order.getTable().getLocation());
+        dto.setTable(table);
+        dto.setReservationId(order.getReservation() != null ? order.getReservation().getId() : null);
+        dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
+        dto.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null);
+        dto.setNotes(order.getNotes());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
+        // Items
+        List<CustomerOrderResponseDTO.OrderItemInfo> items = getOrderItemsByOrderId(order.getId()).stream().map(item -> {
+            CustomerOrderResponseDTO.OrderItemInfo oi = new CustomerOrderResponseDTO.OrderItemInfo();
+            oi.setId(item.getId());
+            oi.setProductName(item.getProduct().getName());
+            oi.setQuantity(item.getQuantity());
+            oi.setUnitPrice(item.getUnitPrice() != null ? item.getUnitPrice().doubleValue() : null);
+            oi.setTotalPrice(item.getTotalPrice() != null ? item.getTotalPrice().doubleValue() : null);
+            return oi;
+        }).collect(Collectors.toList());
+        dto.setItems(items);
+        return dto;
     }
 }

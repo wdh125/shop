@@ -8,6 +8,18 @@ public class ReservationRequestDTO {
     private LocalDateTime reservationDatetime;
     private Integer partySize;
     private String notes;
+    
+    // Default constructor for Jackson deserialization
+    public ReservationRequestDTO() {}
+    
+    // Full constructor
+    public ReservationRequestDTO(Integer customerId, Integer tableId, LocalDateTime reservationDatetime, Integer partySize, String notes) {
+        this.customerId = customerId;
+        this.tableId = tableId;
+        this.reservationDatetime = reservationDatetime;
+        this.partySize = partySize;
+        this.notes = notes;
+    }
     public Integer getCustomerId() { return customerId; }
     public void setCustomerId(Integer customerId) { this.customerId = customerId; }
     public Integer getTableId() { return tableId; }

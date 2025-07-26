@@ -10,7 +10,11 @@ import org.springframework.stereotype.Service;
 import com.coffeeshop.entity.Category;
 import com.coffeeshop.repository.CategoryRepository;
 import com.coffeeshop.dto.admin.request.AdminCategoryRequestDTO;
+import com.coffeeshop.dto.admin.response.AdminCategoryResponseDTO;
 import com.coffeeshop.dto.admin.response.AdminCategoryStatisticsDTO;
+import com.coffeeshop.dto.admin.response.AdminProductResponseDTO;
+import com.coffeeshop.dto.customer.response.CustomerCategoryResponseDTO;
+import java.time.LocalDateTime;
 
 @Service
 public class CategoryService {
@@ -34,8 +38,8 @@ public class CategoryService {
 		category.setDescription(dto.getDescription());
 		category.setIsActive(dto.getIsActive());
 		category.setDisplayOrder(dto.getDisplayOrder());
-		category.setUpdatedAt(java.time.LocalDateTime.now());
-		if (category.getId() == null) category.setCreatedAt(java.time.LocalDateTime.now());
+		category.setUpdatedAt(LocalDateTime.now());
+		if (category.getId() == null) category.setCreatedAt(LocalDateTime.now());
 		return categoryRepository.save(category);
 	}
 
@@ -49,7 +53,7 @@ public class CategoryService {
 			Integer displayOrder = item.get("displayOrder");
 			Category category = getCategoryById(id).orElseThrow(() -> new IllegalArgumentException("ID không hợp lệ trong danh sách reorder!"));
 			category.setDisplayOrder(displayOrder);
-			category.setUpdatedAt(java.time.LocalDateTime.now());
+			category.setUpdatedAt(LocalDateTime.now());
 			categoryRepository.save(category);
 		}
 		return getAllCategories();
@@ -58,7 +62,7 @@ public class CategoryService {
 	public Category toggleActive(Integer id) {
 		Category category = getCategoryById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
 		category.setIsActive(category.getIsActive() == null ? true : !category.getIsActive());
-		category.setUpdatedAt(java.time.LocalDateTime.now());
+		category.setUpdatedAt(LocalDateTime.now());
 		return categoryRepository.save(category);
 	}
 
@@ -69,5 +73,94 @@ public class CategoryService {
 		int totalProducts = products.size();
 		int avgProductsPerCategory = totalCategories == 0 ? 0 : (int) Math.round((double) totalProducts / totalCategories);
 		return new AdminCategoryStatisticsDTO(totalCategories, totalProducts, avgProductsPerCategory);
+	}
+
+	// New methods for DTO mapping and business logic
+	public List<AdminCategoryResponseDTO> getAllAdminCategoryDTOs() {
+		return getAllCategories().stream()
+			.map(c -> {
+				List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+					.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
+					.map(AdminProductResponseDTO::fromEntity)
+					.toList();
+				return AdminCategoryResponseDTO.fromEntity(c, products);
+			})
+			.toList();
+	}
+
+	public List<CustomerCategoryResponseDTO> getAllActiveCustomerCategoryDTOs() {
+		return getAllCategories().stream()
+			.filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+			.map(c -> CustomerCategoryResponseDTO.fromEntity(c, (int) productService.getAllProducts().stream()
+				.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()) && Boolean.TRUE.equals(p.getIsAvailable()))
+				.count()))
+			.toList();
+	}
+
+	public AdminCategoryResponseDTO getAdminCategoryDTOById(Integer id) {
+		Category category = getCategoryById(id)
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
+		
+		List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+			.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(category.getId()))
+			.map(AdminProductResponseDTO::fromEntity)
+			.toList();
+		
+		return AdminCategoryResponseDTO.fromEntity(category, products);
+	}
+
+	public List<AdminProductResponseDTO> getAdminProductsByCategory(Integer id) {
+		// Validate category exists
+		if (!getCategoryById(id).isPresent()) {
+			throw new IllegalArgumentException("Không tìm thấy danh mục!");
+		}
+		
+		return productService.getAllProducts().stream()
+			.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
+			.map(AdminProductResponseDTO::fromEntity)
+			.toList();
+	}
+
+	public AdminCategoryResponseDTO createCategory(AdminCategoryRequestDTO dto) {
+		Category category = saveCategory(dto);
+		List<AdminProductResponseDTO> products = List.of(); // New category has no products yet
+		return AdminCategoryResponseDTO.fromEntity(category, products);
+	}
+
+	public AdminCategoryResponseDTO updateCategory(Integer id, AdminCategoryRequestDTO dto) {
+		dto.setId(id);
+		Category category = saveCategory(dto);
+		
+		List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+			.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
+			.map(AdminProductResponseDTO::fromEntity)
+			.toList();
+		
+		return AdminCategoryResponseDTO.fromEntity(category, products);
+	}
+
+	public AdminCategoryResponseDTO toggleActiveAndReturnDTO(Integer id) {
+		Category category = toggleActive(id);
+		
+		List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+			.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(category.getId()))
+			.map(AdminProductResponseDTO::fromEntity)
+			.toList();
+		
+		return AdminCategoryResponseDTO.fromEntity(category, products);
+	}
+
+	public List<AdminCategoryResponseDTO> reorderCategoriesAndReturnDTOs(List<Map<String, Integer>> reorderList) {
+		List<Category> categories = reorderCategories(reorderList);
+		
+		return categories.stream()
+			.map(c -> {
+				List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+					.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
+					.map(AdminProductResponseDTO::fromEntity)
+					.toList();
+				return AdminCategoryResponseDTO.fromEntity(c, products);
+			})
+			.toList();
 	}
 }
