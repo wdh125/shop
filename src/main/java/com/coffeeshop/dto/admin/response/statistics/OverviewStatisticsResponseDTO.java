@@ -1,4 +1,4 @@
-package com.coffeeshop.dto.response.statistics;
+package com.coffeeshop.dto.admin.response.statistics;
 
 public class OverviewStatisticsResponseDTO {
     private double totalRevenue;
@@ -6,6 +6,9 @@ public class OverviewStatisticsResponseDTO {
     private int totalCustomers;
     private int totalProducts;
     private int totalCategories;
+
+    // Constructor mặc định
+    public OverviewStatisticsResponseDTO() {}
 
     public double getTotalRevenue() { return totalRevenue; }
     public void setTotalRevenue(double totalRevenue) { this.totalRevenue = totalRevenue; }

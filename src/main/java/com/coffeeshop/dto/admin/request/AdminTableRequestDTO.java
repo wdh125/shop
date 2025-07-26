@@ -3,11 +3,14 @@ package com.coffeeshop.dto.admin.request;
 import com.coffeeshop.enums.TableStatus;
 
 public class AdminTableRequestDTO {
-    private String tableNumber;
-    private Integer capacity;
-    private String location;
-    private TableStatus status;
-    private Boolean isActive;
+    private String tableNumber;      // Số bàn
+    private Integer capacity;        // Sức chứa
+    private String location;         // Vị trí
+    private TableStatus status;      // Trạng thái bàn
+    private Boolean isActive;        // Trạng thái hoạt động
+    
+    // Constructor mặc định
+    public AdminTableRequestDTO() {}
     
     public String getTableNumber() { return tableNumber; }
     public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }

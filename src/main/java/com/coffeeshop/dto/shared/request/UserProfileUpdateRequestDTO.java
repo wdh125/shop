@@ -1,4 +1,4 @@
-package com.coffeeshop.dto.customer.request;
+package com.coffeeshop.dto.shared.request;
 
 public class UserProfileUpdateRequestDTO {
     private String fullName;

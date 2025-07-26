@@ -1,8 +1,16 @@
 package com.coffeeshop.dto.shared;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+/**
+ * DTO dùng cho request tạo order (customer/admin)
+ * Truyền danh sách sản phẩm và số lượng
+ * Dùng chung cho cả customer và admin
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderItemDTO {
-    private Integer productId;
-    private Integer quantity;
+    private Integer productId;   // ID sản phẩm
+    private Integer quantity;    // Số lượng sản phẩm
 
     public OrderItemDTO() {}
     

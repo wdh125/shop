@@ -1,11 +1,18 @@
 package com.coffeeshop.dto.common;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+/**
+ * DTO chuẩn hóa phản hồi khi có lỗi (exception, validation, ...)
+ * Dùng chung cho toàn bộ hệ thống
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponseDTO {
-    private String message;
-    private String error;
-    private String path;
-    private String timestamp;
-    private Integer status;
+    private String message;      // Thông điệp lỗi (public, có thể show cho user)
+    private String error;        // Tên lỗi/exception (ví dụ: "BadRequest", "ValidationError")
+    private String path;         // API endpoint gây lỗi
+    private String timestamp;    // Thời điểm lỗi (ISO format)
+    private Integer status;      // HTTP status code (400, 404, 500...)
 
     public ErrorResponseDTO() {}
     

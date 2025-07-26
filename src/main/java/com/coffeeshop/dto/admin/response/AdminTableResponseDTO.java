@@ -1,5 +1,7 @@
 package com.coffeeshop.dto.admin.response;
 
+import com.coffeeshop.entity.TableEntity;
+import com.coffeeshop.enums.TableStatus;
 import java.time.LocalDateTime;
 
 public class AdminTableResponseDTO {
@@ -7,11 +9,11 @@ public class AdminTableResponseDTO {
     private String tableNumber;
     private Integer capacity;
     private String location;
-    private String status;
+    private String status; // FE nhận String, backend dùng Enum
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    // getter/setter
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getTableNumber() { return tableNumber; }
@@ -24,8 +26,22 @@ public class AdminTableResponseDTO {
     public void setStatus(String status) { this.status = status; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-    public java.time.LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(java.time.LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(java.time.LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // Factory method
+    public static AdminTableResponseDTO fromEntity(TableEntity entity) {
+        AdminTableResponseDTO dto = new AdminTableResponseDTO();
+        dto.setId(entity.getId());
+        dto.setTableNumber(entity.getTableNumber());
+        dto.setCapacity(entity.getCapacity());
+        dto.setLocation(entity.getLocation());
+        dto.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedAt(entity.getCreatedAt());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+        return dto;
+    }
 } 

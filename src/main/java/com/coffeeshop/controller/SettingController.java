@@ -41,8 +41,9 @@ public class SettingController {
     @PreAuthorize("hasRole('ADMIN')")
     public AdminSettingResponseDTO createSetting(@RequestBody AdminSettingRequestDTO request) {
         Setting setting = new Setting();
-        setting.setSettingKey(request.getSettingKey());
-        setting.setSettingValue(request.getSettingValue());
+        setting.setSettingKey(request.getKey());
+        setting.setSettingValue(request.getValue());
+        setting.setDescription(request.getDescription());
         setting.setIsActive(request.getIsActive());
         return toAdminSettingResponseDTO(settingService.saveSetting(setting));
     }
@@ -52,7 +53,8 @@ public class SettingController {
     public AdminSettingResponseDTO updateSetting(@PathVariable String key, @RequestBody AdminSettingRequestDTO request) {
         Setting setting = new Setting();
         setting.setSettingKey(key);
-        setting.setSettingValue(request.getSettingValue());
+        setting.setSettingValue(request.getValue());
+        setting.setDescription(request.getDescription());
         setting.setIsActive(request.getIsActive());
         return toAdminSettingResponseDTO(settingService.saveSetting(setting));
     }

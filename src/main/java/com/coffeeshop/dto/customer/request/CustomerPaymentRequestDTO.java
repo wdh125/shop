@@ -5,6 +5,10 @@ public class CustomerPaymentRequestDTO {
     private Double amount;
     private String paymentMethod;
     private String note;
+
+    // Constructor mặc định
+    public CustomerPaymentRequestDTO() {}
+
     public Integer getOrderId() { return orderId; }
     public void setOrderId(Integer orderId) { this.orderId = orderId; }
     public Double getAmount() { return amount; }

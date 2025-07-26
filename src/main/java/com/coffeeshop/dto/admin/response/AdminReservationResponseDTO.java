@@ -13,6 +13,9 @@ public class AdminReservationResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Constructor mặc định
+    public AdminReservationResponseDTO() {}
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public CustomerInfo getCustomer() { return customer; }
@@ -31,12 +34,17 @@ public class AdminReservationResponseDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    // Inner class getter/setter
+
+    // Inner class CustomerInfo
     public static class CustomerInfo {
         private Integer id;
         private String username;
         private String fullName;
         private String phone;
+
+        // Constructor mặc định
+        public CustomerInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getUsername() { return username; }
@@ -46,10 +54,16 @@ public class AdminReservationResponseDTO {
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
     }
+
+    // Inner class TableInfo
     public static class TableInfo {
         private Integer id;
         private String tableNumber;
         private String location;
+
+        // Constructor mặc định
+        public TableInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getTableNumber() { return tableNumber; }
@@ -57,5 +71,4 @@ public class AdminReservationResponseDTO {
         public String getLocation() { return location; }
         public void setLocation(String location) { this.location = location; }
     }
-    // constructor, fromEntity nếu cần
 } 

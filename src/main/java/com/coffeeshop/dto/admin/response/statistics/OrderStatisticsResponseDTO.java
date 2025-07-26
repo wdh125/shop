@@ -1,4 +1,4 @@
-package com.coffeeshop.dto.response.statistics;
+package com.coffeeshop.dto.admin.response.statistics;
 
 import java.time.LocalDate;
 
@@ -6,6 +6,9 @@ public class OrderStatisticsResponseDTO {
     private LocalDate fromDate;
     private LocalDate toDate;
     private int totalOrders;
+
+    // Constructor mặc định
+    public OrderStatisticsResponseDTO() {}
 
     public LocalDate getFromDate() { return fromDate; }
     public void setFromDate(LocalDate fromDate) { this.fromDate = fromDate; }

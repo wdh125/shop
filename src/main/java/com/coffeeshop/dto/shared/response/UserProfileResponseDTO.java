@@ -1,6 +1,6 @@
-package com.coffeeshop.dto.customer.response;
+package com.coffeeshop.dto.shared.response;
 
-public class CustomerUserResponseDTO {
+public class UserProfileResponseDTO {
     private Integer id;
     private String username;
     private String fullName;
@@ -12,8 +12,8 @@ public class CustomerUserResponseDTO {
     private String createdAt;
     private String updatedAt;
 
-    public CustomerUserResponseDTO() {}
-    public CustomerUserResponseDTO(Integer id, String username, String fullName, String email, String phone, String profileImage, String role, Boolean isActive, String createdAt, String updatedAt) {
+    public UserProfileResponseDTO() {}
+    public UserProfileResponseDTO(Integer id, String username, String fullName, String email, String phone, String profileImage, String role, Boolean isActive, String createdAt, String updatedAt) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
@@ -45,8 +45,8 @@ public class CustomerUserResponseDTO {
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
     public String getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
-    public static CustomerUserResponseDTO fromEntity(com.coffeeshop.entity.User u) {
-        return new CustomerUserResponseDTO(
+    public static UserProfileResponseDTO fromEntity(com.coffeeshop.entity.User u) {
+        return new UserProfileResponseDTO(
             u.getId(),
             u.getUsername(),
             u.getFullName(),

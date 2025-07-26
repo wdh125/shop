@@ -1,22 +1,31 @@
 package com.coffeeshop.dto.admin.request;
 
+import java.math.BigDecimal;
+
+/**
+ * DTO dùng cho admin tạo/sửa sản phẩm.
+ */
 public class AdminProductRequestDTO {
-    private Integer categoryId;
-    private String name;
-    private String description;
-    private java.math.BigDecimal price;
-    private String imageUrl;
-    private Boolean isAvailable;
-    private Integer preparationTime;
-    private Integer displayOrder;
+    private Integer categoryId;      // ID danh mục sản phẩm
+    private String name;             // Tên sản phẩm
+    private String description;      // Mô tả sản phẩm
+    private BigDecimal price;        // Giá sản phẩm (BigDecimal cho chính xác tiền tệ)
+    private String imageUrl;         // URL hình ảnh sản phẩm
+    private Boolean isAvailable;     // Trạng thái có sẵn để bán
+    private Integer preparationTime; // Thời gian chuẩn bị (phút)
+    private Integer displayOrder;    // Thứ tự hiển thị
+    
+    // Constructor mặc định
+    public AdminProductRequestDTO() {}
+    
     public Integer getCategoryId() { return categoryId; }
     public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public java.math.BigDecimal getPrice() { return price; }
-    public void setPrice(java.math.BigDecimal price) { this.price = price; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Boolean getIsAvailable() { return isAvailable; }

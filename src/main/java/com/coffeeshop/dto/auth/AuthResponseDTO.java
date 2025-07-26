@@ -1,11 +1,21 @@
 package com.coffeeshop.dto.auth;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+/**
+ * DTO cho response đăng nhập thành công
+ * Trả về token và thông tin user cơ bản
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthResponseDTO {
-    private String accessToken;
-    private String refreshToken;
-    private String username;
-    private String fullName;
-    private String role;
+    private String accessToken;   // JWT access token
+    private String refreshToken;  // Refresh token để lấy access token mới
+    private String username;      // Tên đăng nhập
+    private String fullName;      // Họ tên đầy đủ
+    private String role;          // Vai trò (ROLE_CUSTOMER, ROLE_ADMIN)
+
+    // Constructor mặc định
+    public AuthResponseDTO() {}
 
     public AuthResponseDTO(String accessToken, String refreshToken, String username, String fullName, String role) {
         this.accessToken = accessToken;

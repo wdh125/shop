@@ -7,6 +7,10 @@ public class AdminCategoryRequestDTO {
     private Boolean isActive;
     private Integer displayOrder;
     private Integer id;
+    
+    // Constructor mặc định
+    public AdminCategoryRequestDTO() {}
+    
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }

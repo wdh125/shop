@@ -10,7 +10,9 @@ public class CustomerPaymentResponseDTO {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    // getter/setter
+
+    // Constructor mặc định
+    public CustomerPaymentResponseDTO() {}
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

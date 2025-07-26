@@ -1,7 +1,7 @@
 package com.coffeeshop.controller;
 
-import com.coffeeshop.dto.customer.request.UserProfileUpdateRequestDTO;
-import com.coffeeshop.dto.customer.response.CustomerUserResponseDTO;
+import com.coffeeshop.dto.shared.request.UserProfileUpdateRequestDTO;
+import com.coffeeshop.dto.shared.response.UserProfileResponseDTO;
 import com.coffeeshop.dto.admin.response.AdminUserResponseDTO;
 import com.coffeeshop.dto.admin.request.AdminUserRequestDTO;
 import com.coffeeshop.entity.User;
@@ -37,7 +37,7 @@ public class UserController {
         if (user == null) {
             return ResponseEntity.status(404).body("Không tìm thấy người dùng!");
         }
-        return ResponseEntity.ok(CustomerUserResponseDTO.fromEntity(user));
+        return ResponseEntity.ok(UserProfileResponseDTO.fromEntity(user));
     }
 
     @PutMapping("/profile")

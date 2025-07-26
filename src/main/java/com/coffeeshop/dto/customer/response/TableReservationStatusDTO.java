@@ -7,6 +7,10 @@ public class TableReservationStatusDTO {
     private String tableNumber;
     private LocalDateTime reservationDatetime;
     private String status;
+
+    // Constructor mặc định
+    public TableReservationStatusDTO() {}
+
     public Integer getTableId() { return tableId; }
     public void setTableId(Integer tableId) { this.tableId = tableId; }
     public String getTableNumber() { return tableNumber; }

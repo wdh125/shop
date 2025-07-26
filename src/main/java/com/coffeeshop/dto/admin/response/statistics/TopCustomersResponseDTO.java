@@ -1,4 +1,4 @@
-package com.coffeeshop.dto.response.statistics;
+package com.coffeeshop.dto.admin.response.statistics;
 
 import java.util.List;
 
@@ -9,6 +9,10 @@ public class TopCustomersResponseDTO {
         private String email;
         private double totalSpent;
         private int totalOrders;
+
+        // Constructor mặc định
+        public TopCustomerInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getName() { return name; }
@@ -21,6 +25,10 @@ public class TopCustomersResponseDTO {
         public void setTotalOrders(int totalOrders) { this.totalOrders = totalOrders; }
     }
     private List<TopCustomerInfo> topCustomers;
+
+    // Constructor mặc định
+    public TopCustomersResponseDTO() {}
+
     public List<TopCustomerInfo> getTopCustomers() { return topCustomers; }
     public void setTopCustomers(List<TopCustomerInfo> topCustomers) { this.topCustomers = topCustomers; }
 } 

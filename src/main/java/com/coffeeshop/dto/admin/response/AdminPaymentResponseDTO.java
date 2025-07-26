@@ -11,7 +11,10 @@ public class AdminPaymentResponseDTO {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    // getter/setter
+
+    // Constructor mặc định
+    public AdminPaymentResponseDTO() {}
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public Integer getOrderId() { return orderId; }
@@ -28,12 +31,17 @@ public class AdminPaymentResponseDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    // Inner class getter/setter
+
+    // Inner class
     public static class CustomerInfo {
         private Integer id;
         private String username;
         private String fullName;
         private String phone;
+
+        // Constructor mặc định
+        public CustomerInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getUsername() { return username; }

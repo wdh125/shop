@@ -14,6 +14,9 @@ public class ReservationDetailDTO {
     private LocalDateTime updatedAt;
     private OrderSummaryDTO order;
 
+    // Constructor mặc định
+    public ReservationDetailDTO() {}
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public CustomerInfo getCustomer() { return customer; }
@@ -35,11 +38,16 @@ public class ReservationDetailDTO {
     public OrderSummaryDTO getOrder() { return order; }
     public void setOrder(OrderSummaryDTO order) { this.order = order; }
 
+    // Inner class CustomerInfo
     public static class CustomerInfo {
         private Integer id;
         private String username;
         private String fullName;
         private String phone;
+
+        // Constructor mặc định
+        public CustomerInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getUsername() { return username; }
@@ -49,10 +57,16 @@ public class ReservationDetailDTO {
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
     }
+
+    // Inner class TableInfo
     public static class TableInfo {
         private Integer id;
         private String tableNumber;
         private String location;
+
+        // Constructor mặc định
+        public TableInfo() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getTableNumber() { return tableNumber; }
@@ -60,12 +74,18 @@ public class ReservationDetailDTO {
         public String getLocation() { return location; }
         public void setLocation(String location) { this.location = location; }
     }
+
+    // Inner class OrderSummaryDTO
     public static class OrderSummaryDTO {
         private Integer id;
         private String orderNumber;
         private String status;
         private String paymentStatus;
         private java.math.BigDecimal totalAmount;
+
+        // Constructor mặc định
+        public OrderSummaryDTO() {}
+
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getOrderNumber() { return orderNumber; }

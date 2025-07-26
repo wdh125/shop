@@ -10,6 +10,9 @@ public class AdminOrderRequestDTO {
     private String note;
     private List<OrderItemDTO> items;
 
+    // Constructor mặc định
+    public AdminOrderRequestDTO() {}
+
     // Getters and Setters
     public Integer getTableId() { return tableId; }
     public void setTableId(Integer tableId) { this.tableId = tableId; }
