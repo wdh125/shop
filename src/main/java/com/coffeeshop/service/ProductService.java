@@ -8,12 +8,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.coffeeshop.entity.Product;
+import com.coffeeshop.entity.Category;
 import com.coffeeshop.repository.ProductRepository;
+import com.coffeeshop.repository.CategoryRepository;
+import com.coffeeshop.dto.admin.request.AdminProductRequestDTO;
 
 @Service
 public class ProductService {
 	@Autowired
 	private ProductRepository productRepository;
+	
+	@Autowired
+	private CategoryRepository categoryRepository;
 
 	public List<Product> getAllProducts() {
 		return productRepository.findAll();
@@ -43,6 +49,26 @@ public class ProductService {
 		}
 		product.setUpdatedAt(java.time.LocalDateTime.now());
 		return productRepository.save(product);
+	}
+
+	public Product saveProductFromDTO(AdminProductRequestDTO dto, Integer id) {
+		Product product = id != null ? getProductById(id).orElse(new Product()) : new Product();
+		product.setName(dto.getName());
+		product.setDescription(dto.getDescription());
+		product.setPrice(dto.getPrice());
+		product.setImageUrl(dto.getImageUrl());
+		product.setIsAvailable(dto.getIsAvailable());
+		product.setPreparationTime(dto.getPreparationTime());
+		product.setDisplayOrder(dto.getDisplayOrder());
+		
+		// Set category if categoryId is provided
+		if (dto.getCategoryId() != null) {
+			Category category = categoryRepository.findById(dto.getCategoryId())
+				.orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + dto.getCategoryId()));
+			product.setCategory(category);
+		}
+		
+		return saveProduct(product);
 	}
 
 	public void deleteProduct(Integer id) {

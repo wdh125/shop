@@ -18,7 +18,16 @@ public class Setting {
     @Column(name = "setting_value", nullable = false, length = 255)
     private String settingValue;
 
-    @Column(name = "updated_at")
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     // Getters and Setters
@@ -34,10 +43,12 @@ public class Setting {
     public void setSettingValue(String settingValue) {
         this.settingValue = settingValue;
     }
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

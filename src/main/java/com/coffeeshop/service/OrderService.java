@@ -1,6 +1,7 @@
 package com.coffeeshop.service;
 
-import com.coffeeshop.dto.admin.request.OrderRequestDTO;
+import com.coffeeshop.dto.admin.request.AdminOrderRequestDTO;
+import com.coffeeshop.dto.shared.OrderItemDTO;
 import com.coffeeshop.entity.*;
 import com.coffeeshop.enums.OrderItemStatus;
 import com.coffeeshop.enums.OrderStatus;
@@ -49,7 +50,7 @@ public class OrderService {
      * @return Entity Order sau khi đã được lưu thành công.
      */
     @Transactional
-    public Order createOrderWithItems(OrderRequestDTO orderRequestDTO) {
+    public Order createOrderWithItems(AdminOrderRequestDTO orderRequestDTO) {
         User user;
         TableEntity table;
         Reservation reservation = null;
@@ -99,7 +100,7 @@ public class OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
 
-        for (OrderRequestDTO.OrderItemDTO itemDTO : orderRequestDTO.getItems()) {
+        for (OrderItemDTO itemDTO : orderRequestDTO.getItems()) {
             Product product = productRepository.findById(itemDTO.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found with id: " + itemDTO.getProductId()));
             

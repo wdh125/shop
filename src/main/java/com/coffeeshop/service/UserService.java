@@ -3,6 +3,7 @@ package com.coffeeshop.service;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +13,9 @@ import java.util.Optional;
 public class UserService {
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -19,6 +23,10 @@ public class UserService {
 
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
+    }
+
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     public User saveUser(User user) {
@@ -35,5 +43,13 @@ public class UserService {
 
     public void deleteUser(Integer id) {
         userRepository.deleteById(id);
+    }
+    
+    public String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+    
+    public boolean matchesPassword(String rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 }

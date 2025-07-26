@@ -1,12 +1,12 @@
 package com.coffeeshop.controller;
 
-import com.coffeeshop.dto.admin.request.PaymentRequestDTO;
-import com.coffeeshop.dto.admin.response.PaymentResponseDTO;
+import com.coffeeshop.dto.admin.response.AdminPaymentResponseDTO;
+import com.coffeeshop.dto.customer.response.CustomerPaymentResponseDTO;
+import com.coffeeshop.dto.customer.request.CustomerPaymentRequestDTO;
+import com.coffeeshop.dto.admin.request.AdminPaymentStatusUpdateDTO;
 import com.coffeeshop.entity.Payment;
 import com.coffeeshop.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,9 +31,9 @@ public class PaymentController {
      * @return ResponseEntity chứa PaymentResponseDTO với thông tin chi tiết của payment đã được tạo.
      */
     @PostMapping
-    public ResponseEntity<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO paymentRequestDTO) {
-        Payment payment = paymentService.createPayment(paymentRequestDTO);
-        return new ResponseEntity<>(paymentToDTO(payment), HttpStatus.CREATED);
+    public CustomerPaymentResponseDTO createPayment(@RequestBody CustomerPaymentRequestDTO request) {
+        Payment payment = paymentService.createPaymentForCustomer(request);
+        return toCustomerPaymentResponseDTO(payment);
     }
 
     /**
@@ -42,9 +42,9 @@ public class PaymentController {
      * @return Danh sách các PaymentResponseDTO.
      */
     @GetMapping
-    public List<PaymentResponseDTO> getAllPayments() {
+    public List<AdminPaymentResponseDTO> getAllPayments() {
         return paymentService.getAllPayments().stream()
-                .map(this::paymentToDTO)
+                .map(this::toAdminPaymentResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -55,10 +55,10 @@ public class PaymentController {
      * @return ResponseEntity chứa PaymentResponseDTO nếu tìm thấy, ngược lại trả về 404 Not Found.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<PaymentResponseDTO> getPaymentById(@PathVariable Integer id) {
-        return paymentService.getPaymentById(id)
-                .map(payment -> ResponseEntity.ok(paymentToDTO(payment)))
-                .orElse(ResponseEntity.notFound().build());
+    public AdminPaymentResponseDTO getPaymentById(@PathVariable Integer id) {
+        Payment payment = paymentService.getPaymentById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy payment!"));
+        return toAdminPaymentResponseDTO(payment);
     }
 
     /**
@@ -68,9 +68,9 @@ public class PaymentController {
      * @return Danh sách các PaymentResponseDTO của khách hàng đó.
      */
     @GetMapping("/by-customer/{customerId}")
-    public List<PaymentResponseDTO> getPaymentsByCustomer(@PathVariable Integer customerId) {
+    public List<CustomerPaymentResponseDTO> getPaymentsByCustomer(@PathVariable Integer customerId) {
         return paymentService.getPaymentsByCustomerId(customerId).stream()
-                .map(this::paymentToDTO)
+                .map(this::toCustomerPaymentResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -81,51 +81,47 @@ public class PaymentController {
      * @return Danh sách các PaymentResponseDTO thuộc đơn hàng đó.
      */
     @GetMapping("/by-order/{orderId}")
-    public List<PaymentResponseDTO> getPaymentsByOrder(@PathVariable Integer orderId) {
+    public List<CustomerPaymentResponseDTO> getPaymentsByOrder(@PathVariable Integer orderId) {
         return paymentService.getPaymentsByOrderId(orderId).stream()
-                .map(this::paymentToDTO)
+                .map(this::toCustomerPaymentResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Phương thức nội bộ để chuyển đổi từ entity Payment sang PaymentResponseDTO.
-     * Việc này giúp che giấu các chi tiết không cần thiết của entity và cấu trúc lại dữ liệu
-     * cho phù hợp với phía client.
-     *
-     * @param payment Entity Payment cần chuyển đổi.
-     * @return PaymentResponseDTO đã được mapping thông tin.
-     */
-    private PaymentResponseDTO paymentToDTO(Payment payment) {
-        PaymentResponseDTO dto = new PaymentResponseDTO();
+    @PatchMapping("/{id}/status")
+    public AdminPaymentResponseDTO updatePaymentStatus(@PathVariable Integer id, @RequestBody AdminPaymentStatusUpdateDTO request) {
+        Payment payment = paymentService.updatePaymentStatusByAdmin(id, request);
+        return toAdminPaymentResponseDTO(payment);
+    }
+
+    // Helper mapping methods
+    private AdminPaymentResponseDTO toAdminPaymentResponseDTO(Payment payment) {
+        AdminPaymentResponseDTO dto = new AdminPaymentResponseDTO();
         dto.setId(payment.getId());
-
-        if (payment.getOrder() != null && payment.getOrder().getOrderNumber() != null) {
-            try {
-                // An toàn hơn khi parse, chỉ lấy các ký tự số từ orderNumber
-                String numericOrderNumber = payment.getOrder().getOrderNumber().replaceAll("[^0-9]", "");
-                if (!numericOrderNumber.isEmpty()) {
-                    dto.setOrderNumber(Long.parseLong(numericOrderNumber));
-                }
-            } catch (NumberFormatException e) {
-                // Nếu có lỗi xảy ra, ghi log và bỏ qua, orderNumber sẽ là null
-                System.err.println("Could not parse order number: " + payment.getOrder().getOrderNumber());
-                dto.setOrderNumber(null);
-            }
+        dto.setOrderId(payment.getOrder() != null ? payment.getOrder().getId() : null);
+        AdminPaymentResponseDTO.CustomerInfo customer = new AdminPaymentResponseDTO.CustomerInfo();
+        if (payment.getOrder() != null && payment.getOrder().getCustomer() != null) {
+            customer.setId(payment.getOrder().getCustomer().getId());
+            customer.setUsername(payment.getOrder().getCustomer().getUsername());
+            customer.setFullName(payment.getOrder().getCustomer().getFullName());
+            customer.setPhone(payment.getOrder().getCustomer().getPhone());
         }
-
-        dto.setAmount(payment.getAmount());
-        dto.setPaymentMethod(payment.getPaymentMethod().name());
-        dto.setStatus(payment.getStatus().name());
+        dto.setCustomer(customer);
+        dto.setAmount(payment.getAmount() != null ? payment.getAmount().doubleValue() : null);
+        dto.setPaymentMethod(payment.getPaymentMethod() != null ? payment.getPaymentMethod().name() : null);
+        dto.setStatus(payment.getStatus() != null ? payment.getStatus().name() : null);
         dto.setCreatedAt(payment.getCreatedAt());
-
-        if (payment.getProcessedBy() != null) {
-            PaymentResponseDTO.UserInfo userInfo = new PaymentResponseDTO.UserInfo();
-            userInfo.setId(payment.getProcessedBy().getId());
-            userInfo.setUsername(payment.getProcessedBy().getUsername());
-            userInfo.setFullName(payment.getProcessedBy().getFullName());
-            dto.setProcessedBy(userInfo);
-        }
-
+        dto.setUpdatedAt(payment.getUpdatedAt());
+        return dto;
+    }
+    private CustomerPaymentResponseDTO toCustomerPaymentResponseDTO(Payment payment) {
+        CustomerPaymentResponseDTO dto = new CustomerPaymentResponseDTO();
+        dto.setId(payment.getId());
+        dto.setOrderId(payment.getOrder() != null ? payment.getOrder().getId() : null);
+        dto.setAmount(payment.getAmount() != null ? payment.getAmount().doubleValue() : null);
+        dto.setPaymentMethod(payment.getPaymentMethod() != null ? payment.getPaymentMethod().name() : null);
+        dto.setStatus(payment.getStatus() != null ? payment.getStatus().name() : null);
+        dto.setCreatedAt(payment.getCreatedAt());
+        dto.setUpdatedAt(payment.getUpdatedAt());
         return dto;
     }
 }

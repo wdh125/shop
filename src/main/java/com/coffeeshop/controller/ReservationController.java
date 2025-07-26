@@ -15,8 +15,15 @@ import com.coffeeshop.scheduler.SchedulerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.time.DayOfWeek;
+import java.util.Set;
+import com.coffeeshop.dto.admin.response.AdminReservationResponseDTO;
+import com.coffeeshop.dto.customer.response.CustomerReservationResponseDTO;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -31,6 +38,9 @@ public class ReservationController {
     private OrderService orderService;
     @Autowired
     private SchedulerConfig schedulerConfig;
+
+    // Danh sách ngày nghỉ (ví dụ: Chủ nhật)
+    private static final Set<DayOfWeek> HOLIDAYS = Set.of(DayOfWeek.SUNDAY); // Có thể lấy từ config hoặc DB
 
     // Customer: Xem danh sách bàn đã bị đặt (cho chọn bàn)
     @GetMapping("/booked-tables")
@@ -49,25 +59,37 @@ public class ReservationController {
 
     // Admin: Xem tất cả reservation chi tiết
     @GetMapping
-    public List<ReservationDetailDTO> getAllReservations() {
+    public List<AdminReservationResponseDTO> getAllReservations() {
         return reservationService.getAllReservations().stream()
-            .map(this::toReservationDetailDTO)
+            .map(this::toAdminReservationResponseDTO)
             .collect(Collectors.toList());
     }
 
     // Admin: Xem chi tiết 1 reservation
     @GetMapping("/{id}")
-    public ReservationDetailDTO getReservationById(@PathVariable Integer id) {
+    public AdminReservationResponseDTO getReservationById(@PathVariable Integer id) {
         Reservation reservation = reservationService.getReservationById(id)
             .orElseThrow(() -> new RuntimeException("Reservation not found"));
-        return toReservationDetailDTO(reservation);
+        return toAdminReservationResponseDTO(reservation);
     }
 
     // Customer: Đặt bàn mới
     @PostMapping
-    public ReservationDetailDTO createReservation(@RequestBody Reservation reservation) {
-        // Kiểm tra user và table tồn tại
-        User user = userService.getUserById(reservation.getCustomer().getId())
+    public CustomerReservationResponseDTO createReservation(@RequestBody Reservation reservation, @AuthenticationPrincipal UserDetails userDetails) {
+        // Validate ngày nghỉ
+        DayOfWeek day = reservation.getReservationDatetime().getDayOfWeek();
+        if (HOLIDAYS.contains(day)) {
+            throw new IllegalArgumentException("Không thể đặt bàn vào ngày nghỉ!");
+        }
+        // Validate giờ hoạt động
+        LocalTime opening = LocalTime.parse(schedulerConfig.openingTime);
+        LocalTime closing = LocalTime.parse(schedulerConfig.closingTime);
+        LocalTime reservationTime = reservation.getReservationDatetime().toLocalTime();
+        if (reservationTime.isBefore(opening) || reservationTime.isAfter(closing)) {
+            throw new IllegalArgumentException("Chỉ được đặt bàn trong giờ mở cửa: " + opening + " - " + closing);
+        }
+        // Lấy user từ token
+        User user = userService.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         TableEntity table = tableService.getTableById(reservation.getTable().getId())
                 .orElseThrow(() -> new RuntimeException("Table not found"));
@@ -100,22 +122,26 @@ public class ReservationController {
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setUpdatedAt(LocalDateTime.now());
         Reservation saved = reservationService.saveReservation(reservation);
-        return toReservationDetailDTO(saved);
+        return toCustomerReservationResponseDTO(saved);
     }
 
     // Customer: Xem lịch sử đặt bàn của mình
-    @GetMapping("/user/{userId}")
-    public List<ReservationDetailDTO> getReservationsByUser(@PathVariable Integer userId) {
-        return reservationService.getReservationsByUser(userId).stream()
-            .map(this::toReservationDetailDTO)
+    @GetMapping("/user/me")
+    public List<CustomerReservationResponseDTO> getReservationsByCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = userService.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+        return reservationService.getReservationsByUser(user.getId()).stream()
+            .map(this::toCustomerReservationResponseDTO)
             .toList();
     }
 
     // Customer: Huỷ đặt bàn của mình
     @PutMapping("/{id}/cancel")
-    public ReservationDetailDTO cancelReservation(@PathVariable Integer id, @RequestParam Integer userId) {
-        Reservation reservation = reservationService.cancelReservation(id, userId);
-        return toReservationDetailDTO(reservation);
+    public CustomerReservationResponseDTO cancelReservation(@PathVariable Integer id, @AuthenticationPrincipal UserDetails userDetails) {
+        var user = userService.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+        Reservation reservation = reservationService.cancelReservation(id, user.getId());
+        return toCustomerReservationResponseDTO(reservation);
     }
 
     // Admin: Xác nhận/huỷ reservation
@@ -174,6 +200,49 @@ public class ReservationController {
         } else {
             dto.setOrder(null);
         }
+        return dto;
+    }
+
+    // Helper mapping methods
+    private AdminReservationResponseDTO toAdminReservationResponseDTO(Reservation reservation) {
+        AdminReservationResponseDTO dto = new AdminReservationResponseDTO();
+        dto.setId(reservation.getId());
+        // Customer info
+        AdminReservationResponseDTO.CustomerInfo customer = new AdminReservationResponseDTO.CustomerInfo();
+        customer.setId(reservation.getCustomer().getId());
+        customer.setUsername(reservation.getCustomer().getUsername());
+        customer.setFullName(reservation.getCustomer().getFullName());
+        customer.setPhone(reservation.getCustomer().getPhone());
+        dto.setCustomer(customer);
+        // Table info
+        AdminReservationResponseDTO.TableInfo table = new AdminReservationResponseDTO.TableInfo();
+        table.setId(reservation.getTable().getId());
+        table.setTableNumber(reservation.getTable().getTableNumber());
+        table.setLocation(reservation.getTable().getLocation());
+        dto.setTable(table);
+        dto.setReservationDatetime(reservation.getReservationDatetime());
+        dto.setPartySize(reservation.getPartySize());
+        dto.setStatus(reservation.getStatus().name());
+        dto.setNotes(reservation.getNotes());
+        dto.setCreatedAt(reservation.getCreatedAt());
+        dto.setUpdatedAt(reservation.getUpdatedAt());
+        return dto;
+    }
+    private CustomerReservationResponseDTO toCustomerReservationResponseDTO(Reservation reservation) {
+        CustomerReservationResponseDTO dto = new CustomerReservationResponseDTO();
+        dto.setId(reservation.getId());
+        // Table info
+        CustomerReservationResponseDTO.TableInfo table = new CustomerReservationResponseDTO.TableInfo();
+        table.setId(reservation.getTable().getId());
+        table.setTableNumber(reservation.getTable().getTableNumber());
+        table.setLocation(reservation.getTable().getLocation());
+        dto.setTable(table);
+        dto.setReservationDatetime(reservation.getReservationDatetime());
+        dto.setPartySize(reservation.getPartySize());
+        dto.setStatus(reservation.getStatus().name());
+        dto.setNotes(reservation.getNotes());
+        dto.setCreatedAt(reservation.getCreatedAt());
+        dto.setUpdatedAt(reservation.getUpdatedAt());
         return dto;
     }
 }

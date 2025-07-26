@@ -6,5 +6,13 @@ public enum OrderStatus {
     PAID,         // Đã thanh toán, chưa làm
     PREPARING,    // Đang chế biến món
     SERVED,       // Món đã hoàn thành và đã tới khách
-    COMPLETED     // Kết thúc sau một khoảng thời gian
+    COMPLETED;    // Kết thúc sau một khoảng thời gian
+
+    public boolean isAllowPayment() {
+        return this == PENDING;
+    }
+    public OrderStatus nextAfterPayment() {
+        if (this == PENDING) return PAID;
+        return this;
+    }
 }

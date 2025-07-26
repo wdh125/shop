@@ -46,6 +46,10 @@ public class Payment {
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
 
+	private java.time.LocalDateTime updatedAt;
+	public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
+	public void setUpdatedAt(java.time.LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
 	public Integer getId() {
 		return id;
 	}

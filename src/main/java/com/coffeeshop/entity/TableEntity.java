@@ -34,6 +34,9 @@ public class TableEntity {
 	private TableStatus status = TableStatus.AVAILABLE;
 
 	@Column(nullable = false)
+	private Boolean isActive;
+
+	@Column(nullable = false)
 	private LocalDateTime createdAt;
 
 	@Column(nullable = false)
@@ -77,6 +80,14 @@ public class TableEntity {
 
 	public void setStatus(TableStatus status) {
 		this.status = status;
+	}
+
+	public Boolean getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(Boolean isActive) {
+		this.isActive = isActive;
 	}
 
 	public LocalDateTime getCreatedAt() {

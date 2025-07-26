@@ -1,7 +1,6 @@
 package com.coffeeshop.controller;
 
 import com.coffeeshop.dto.auth.AuthRequest;
-import com.coffeeshop.dto.auth.AuthResponse;
 import com.coffeeshop.dto.auth.AuthResponseDTO;
 import com.coffeeshop.dto.auth.RefreshTokenRequestDTO;
 import com.coffeeshop.dto.auth.RefreshTokenResponseDTO;
@@ -73,6 +72,10 @@ public class AuthController {
         refreshTokenService.deleteByUser(user);
         return ResponseEntity.ok("Đăng xuất thành công!");
     }
+
+
+
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @jakarta.validation.Valid RegisterRequestDTO request) {

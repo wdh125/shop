@@ -3,9 +3,9 @@ package com.coffeeshop.service;
 import com.coffeeshop.entity.RefreshToken;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.repository.RefreshTokenRepository;
-import com.coffeeshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -28,6 +28,7 @@ public class RefreshTokenService {
     }
 
     // Tạo và lưu refresh token mới cho user
+    @Transactional
     public RefreshToken createRefreshToken(User user) {
         // Xóa token cũ nếu có (1 user chỉ giữ 1 refresh token)
         refreshTokenRepository.deleteByUser(user);
@@ -45,6 +46,7 @@ public class RefreshTokenService {
     }
 
     // Thu hồi token
+    @Transactional
     public void revokeToken(RefreshToken token) {
         token.setIsRevoked(true);
         refreshTokenRepository.save(token);
@@ -56,6 +58,7 @@ public class RefreshTokenService {
     }
 
     // Xóa tất cả token của user (logout all)
+    @Transactional
     public void deleteByUser(User user) {
         refreshTokenRepository.deleteByUser(user);
     }

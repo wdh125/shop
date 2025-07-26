@@ -1,15 +1,17 @@
 package com.coffeeshop.controller;
 
-import com.coffeeshop.entity.Category;
 import com.coffeeshop.service.CategoryService;
 import com.coffeeshop.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import com.coffeeshop.entity.Product;
 import java.util.Map;
-import com.coffeeshop.dto.admin.response.CategoryDTO;
-import com.coffeeshop.dto.admin.response.ProductDTO;
+import com.coffeeshop.dto.admin.response.AdminCategoryResponseDTO;
+import com.coffeeshop.dto.admin.request.AdminCategoryRequestDTO;
+import com.coffeeshop.dto.admin.response.AdminCategoryStatisticsDTO;
+import com.coffeeshop.dto.customer.response.CustomerCategoryResponseDTO;
+import com.coffeeshop.dto.admin.response.AdminProductResponseDTO;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -20,81 +22,63 @@ public class CategoryController {
     private ProductService productService;
 
     @GetMapping
-    public List<CategoryDTO> getAllCategories() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AdminCategoryResponseDTO> getAllCategories() {
         return categoryService.getAllCategories().stream()
-            .map(c -> CategoryDTO.fromEntity(c, productService.getAllProducts().stream()
-                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
-                .map(p -> new CategoryDTO.ProductInfo(p.getId(), p.getName(), p.getPrice(), p.getIsAvailable()))
-                .toList()))
+            .map(c -> {
+                List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+                    .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
+                    .map(AdminProductResponseDTO::fromEntity)
+                    .toList();
+                return AdminCategoryResponseDTO.fromEntity(c, products);
+            })
             .toList();
     }
 
     @GetMapping("/active")
-    public List<CategoryDTO> getActiveCategories() {
+    public List<CustomerCategoryResponseDTO> getActiveCategories() {
         return categoryService.getAllCategories().stream()
             .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
-            .map(c -> CategoryDTO.fromEntity(c, productService.getAllProducts().stream()
-                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
-                .map(p -> new CategoryDTO.ProductInfo(p.getId(), p.getName(), p.getPrice(), p.getIsAvailable()))
-                .toList()))
+            .map(c -> CustomerCategoryResponseDTO.fromEntity(c, (int) productService.getAllProducts().stream()
+                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()) && Boolean.TRUE.equals(p.getIsAvailable()))
+                .count()))
             .toList();
     }
 
     @GetMapping("/menu")
-    public List<MenuCategoryDTO> getMenu() {
-        List<Category> categories = categoryService.getAllCategories().stream()
+    public List<CustomerCategoryResponseDTO> getMenu() {
+        return categoryService.getAllCategories().stream()
             .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+            .map(c -> CustomerCategoryResponseDTO.fromEntity(c, (int) productService.getAllProducts().stream()
+                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()) && Boolean.TRUE.equals(p.getIsAvailable()))
+                .count()))
             .toList();
-        List<Product> products = productService.getAllProducts().stream()
-            .filter(p -> Boolean.TRUE.equals(p.getIsAvailable()))
-            .toList();
-        return categories.stream().map(cat -> {
-            List<ProductDTO> catProducts = products.stream()
-                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(cat.getId()))
-                .map(ProductDTO::fromEntity)
-                .toList();
-            return new MenuCategoryDTO(cat, catProducts);
-        }).toList();
     }
 
     @GetMapping("/{id}")
-    public CategoryDTO getCategoryDetail(@PathVariable Integer id) {
-        Category category = categoryService.getCategoryById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
-        List<CategoryDTO.ProductInfo> products = productService.getAllProducts().stream()
-            .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
-            .map(p -> new CategoryDTO.ProductInfo(p.getId(), p.getName(), p.getPrice(), p.getIsAvailable()))
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminCategoryResponseDTO getCategoryById(@PathVariable Integer id) {
+        var c = categoryService.getCategoryById(id).orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
+        List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+            .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
+            .map(AdminProductResponseDTO::fromEntity)
             .toList();
-        return CategoryDTO.fromEntity(category, products);
+        return AdminCategoryResponseDTO.fromEntity(c, products);
     }
 
     @GetMapping("/{id}/products")
-    public List<ProductDTO> getProductsByCategory(
-            @PathVariable Integer id,
-            @RequestParam(required = false) Boolean isAvailable,
-            @RequestParam(required = false, defaultValue = "") String sort
-    ) {
-        List<ProductDTO> products = productService.getAllProducts().stream()
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AdminProductResponseDTO> getProductsByCategory(@PathVariable Integer id) {
+        return productService.getAllProducts().stream()
             .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
-            .filter(p -> isAvailable == null || isAvailable.equals(p.getIsAvailable()))
-            .map(ProductDTO::fromEntity)
+            .map(AdminProductResponseDTO::fromEntity)
             .toList();
-        if (sort.equalsIgnoreCase("price,asc")) {
-            products = products.stream().sorted((a, b) -> a.getPrice().compareTo(b.getPrice())).toList();
-        } else if (sort.equalsIgnoreCase("price,desc")) {
-            products = products.stream().sorted((a, b) -> b.getPrice().compareTo(a.getPrice())).toList();
-        }
-        return products;
     }
 
     @GetMapping("/statistics")
-    public StatisticsDTO getStatistics() {
-        List<Category> categories = categoryService.getAllCategories();
-        List<Product> products = productService.getAllProducts();
-        int totalCategories = categories.size();
-        int totalProducts = products.size();
-        int avgProductsPerCategory = totalCategories == 0 ? 0 : (int) Math.round((double) totalProducts / totalCategories);
-        return new StatisticsDTO(totalCategories, totalProducts, avgProductsPerCategory);
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminCategoryStatisticsDTO getStatistics() {
+        return categoryService.getStatistics();
     }
     public static class StatisticsDTO {
         private final int totalCategories;
@@ -111,37 +95,48 @@ public class CategoryController {
     }
 
     @PostMapping
-    public CategoryDTO createCategory(@RequestBody Category category) {
-        return CategoryDTO.fromEntity(categoryService.saveCategory(category), List.of());
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminCategoryResponseDTO createCategory(@RequestBody AdminCategoryRequestDTO dto) {
+        var category = categoryService.saveCategory(dto);
+        List<AdminProductResponseDTO> products = List.of();
+        return AdminCategoryResponseDTO.fromEntity(category, products);
     }
 
     @PutMapping("/{id}")
-    public CategoryDTO updateCategory(@PathVariable Integer id, @RequestBody Category category) {
-        category.setId(id);
-        return CategoryDTO.fromEntity(categoryService.saveCategory(category), List.of());
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminCategoryResponseDTO updateCategory(@PathVariable Integer id, @RequestBody AdminCategoryRequestDTO dto) {
+        dto.setId(id);
+        var category = categoryService.saveCategory(dto);
+        List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+            .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
+            .map(AdminProductResponseDTO::fromEntity)
+            .toList();
+        return AdminCategoryResponseDTO.fromEntity(category, products);
     }
 
     @PatchMapping("/{id}/toggle-active")
-    public CategoryDTO toggleActive(@PathVariable Integer id) {
-        Category category = categoryService.getCategoryById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
-        category.setIsActive(category.getIsActive() == null ? true : !category.getIsActive());
-        return CategoryDTO.fromEntity(categoryService.saveCategory(category), List.of());
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminCategoryResponseDTO toggleActive(@PathVariable Integer id) {
+        var category = categoryService.toggleActive(id);
+        List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+            .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
+            .map(AdminProductResponseDTO::fromEntity)
+            .toList();
+        return AdminCategoryResponseDTO.fromEntity(category, products);
     }
 
     @PatchMapping("/reorder")
-    public List<CategoryDTO> reorderCategories(@RequestBody List<ReorderRequest> reorderList) {
-        Map<Integer, Integer> idToOrder = reorderList.stream()
-            .collect(java.util.stream.Collectors.toMap(ReorderRequest::getId, ReorderRequest::getDisplayOrder));
-        List<Integer> allIds = categoryService.getAllCategories().stream().map(Category::getId).toList();
-        for (Integer id : idToOrder.keySet()) {
-            if (!allIds.contains(id)) throw new IllegalArgumentException("ID không hợp lệ trong danh sách reorder!");
-        }
-        return categoryService.reorderCategories(idToOrder).stream()
-            .map(c -> CategoryDTO.fromEntity(c, productService.getAllProducts().stream()
-                .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
-                .map(p -> new CategoryDTO.ProductInfo(p.getId(), p.getName(), p.getPrice(), p.getIsAvailable()))
-                .toList()))
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AdminCategoryResponseDTO> reorderCategories(@RequestBody List<Map<String, Integer>> reorderList) {
+        var categories = categoryService.reorderCategories(reorderList);
+        return categories.stream()
+            .map(c -> {
+                List<AdminProductResponseDTO> products = productService.getAllProducts().stream()
+                    .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(c.getId()))
+                    .map(AdminProductResponseDTO::fromEntity)
+                    .toList();
+                return AdminCategoryResponseDTO.fromEntity(c, products);
+            })
             .toList();
     }
     public static class ReorderRequest {
@@ -152,26 +147,4 @@ public class CategoryController {
         public Integer getDisplayOrder() { return displayOrder; }
         public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
     }
-}
-
-class CategoryDetailDTO {
-    private final Category category;
-    private final long productCount;
-    public CategoryDetailDTO(Category category, long productCount) {
-        this.category = category;
-        this.productCount = productCount;
-    }
-    public Category getCategory() { return category; }
-    public long getProductCount() { return productCount; }
-}
-
-class MenuCategoryDTO {
-    private final Category category;
-    private final List<ProductDTO> products;
-    public MenuCategoryDTO(Category category, List<ProductDTO> products) {
-        this.category = category;
-        this.products = products;
-    }
-    public Category getCategory() { return category; }
-    public List<ProductDTO> getProducts() { return products; }
 }

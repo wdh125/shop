@@ -1,0 +1,22 @@
+package com.coffeeshop.dto.admin.request;
+
+public class AdminCategoryRequestDTO {
+    private String name;
+    private String description;
+    private String imageUrl;
+    private Boolean isActive;
+    private Integer displayOrder;
+    private Integer id;
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+} 
