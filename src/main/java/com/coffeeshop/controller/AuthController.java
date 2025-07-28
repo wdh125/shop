@@ -6,8 +6,7 @@ import com.coffeeshop.dto.auth.RegisterRequestDTO;
 import com.coffeeshop.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -28,8 +27,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@AuthenticationPrincipal UserDetails userDetails) {
-        return authService.logout(userDetails);
+    public ResponseEntity<?> logout(@RequestBody RefreshTokenRequestDTO request) {
+        return authService.logout(request.getRefreshToken());
     }
 
     @PostMapping("/register")

@@ -12,7 +12,6 @@ import com.coffeeshop.repository.TableRepository;
 import com.coffeeshop.dto.admin.response.AdminTableResponseDTO;
 import com.coffeeshop.dto.admin.request.AdminTableRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerTableResponseDTO;
-import com.coffeeshop.enums.TableStatus;
 import java.time.LocalDateTime;
 
 @Service

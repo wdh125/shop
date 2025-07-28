@@ -7,7 +7,6 @@ public class AdminSettingResponseDTO {
     private String value;
     private String description;
     private Boolean isActive;
-    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     // getter/setter
     public String getKey() { return key; }
@@ -18,8 +17,6 @@ public class AdminSettingResponseDTO {
     public void setDescription(String description) { this.description = description; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-    public java.time.LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(java.time.LocalDateTime createdAt) { this.createdAt = createdAt; }
     public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(java.time.LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 } 

@@ -18,6 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     List<Order> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
     List<Order> findByCustomer_Id(Integer customerId);
+    List<Order> findByCustomerOrderByCreatedAtDesc(com.coffeeshop.entity.User customer);
     Order findByReservation_Id(Integer reservationId);
     List<Order> findByPaymentStatus(PaymentStatus paymentStatus);
 }

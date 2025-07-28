@@ -37,7 +37,7 @@ public class OrderItem {
 	@Column(name = "unit_price", nullable = false)
 	private java.math.BigDecimal unitPrice;
 
-	@Column(name = "total_price", nullable = false, insertable = false, updatable = false)
+	@Column(name = "total_price", nullable = false)
 	private java.math.BigDecimal totalPrice;
 
 	@Enumerated(EnumType.STRING)

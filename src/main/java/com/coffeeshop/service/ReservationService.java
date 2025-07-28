@@ -22,6 +22,7 @@ import com.coffeeshop.dto.customer.response.ReservationDetailDTO;
 import com.coffeeshop.dto.customer.response.TableReservationStatusDTO;
 import com.coffeeshop.dto.customer.request.ReservationRequestDTO;
 import com.coffeeshop.scheduler.SchedulerConfig;
+import com.coffeeshop.enums.TableStatus;
 
 @Service
 public class ReservationService {
@@ -95,8 +96,26 @@ public class ReservationService {
 	// ===== Các method mới cho DTO mapping =====
 	
 	public List<TableReservationStatusDTO> getBookedTableStatusDTOs() {
+		LocalDateTime now = LocalDateTime.now();
 		return getAllReservations().stream()
+			.filter(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED)
+			.filter(r -> r.getReservationDatetime().isAfter(now)) // Chỉ hiển thị reservation trong tương lai
 			.map(this::toTableReservationStatusDTO)
+			.toList();
+	}
+
+	// Method để lấy danh sách bàn trống (cho customer chọn)
+	public List<TableEntity> getAvailableTables() {
+		LocalDateTime now = LocalDateTime.now();
+		List<Integer> bookedTableIds = getAllReservations().stream()
+			.filter(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED)
+			.filter(r -> r.getReservationDatetime().isAfter(now))
+			.map(r -> r.getTable().getId())
+			.toList();
+		
+		return tableService.getAllTables().stream()
+			.filter(table -> !bookedTableIds.contains(table.getId()))
+			.filter(table -> table.getStatus() == TableStatus.AVAILABLE)
 			.toList();
 	}
 
@@ -116,28 +135,41 @@ public class ReservationService {
 		// Validate ngày nghỉ
 		DayOfWeek day = request.getReservationDatetime().getDayOfWeek();
 		if (HOLIDAYS.contains(day)) {
-			throw new IllegalArgumentException("Không thể đặt bàn vào ngày nghỉ!");
+			throw new IllegalArgumentException("Không thể đặt bàn vào ngày nghỉ (Chủ nhật)!");
 		}
 		
-		// Validate giờ hoạt động
-		LocalTime opening = LocalTime.parse(schedulerConfig.openingTime);
-		LocalTime closing = LocalTime.parse(schedulerConfig.closingTime);
+		// Validate giờ hoạt động với thời gian chuẩn bị và phục vụ
+		LocalTime opening = LocalTime.parse(schedulerConfig.openingTime); // 08:00
+		LocalTime closing = LocalTime.parse(schedulerConfig.closingTime); // 22:00
 		LocalTime reservationTime = request.getReservationDatetime().toLocalTime();
-		if (reservationTime.isBefore(opening) || reservationTime.isAfter(closing)) {
-			throw new IllegalArgumentException("Chỉ được đặt bàn trong giờ mở cửa: " + opening + " - " + closing);
+		
+		// Thời gian chuẩn bị: 1 tiếng trước giờ mở cửa để chuẩn bị
+		LocalTime effectiveOpening = opening.plusMinutes(60); // 09:00 - bắt đầu nhận đặt bàn
+		
+		// Thời gian kết thúc đặt bàn: 2 tiếng trước giờ đóng cửa để đảm bảo đủ thời gian phục vụ
+		// (60 phút phục vụ + 30 phút dọn dẹp + 30 phút buffer)
+		LocalTime effectiveClosing = closing.minusMinutes(120); // 20:00 - kết thúc nhận đặt bàn
+		
+		if (reservationTime.isBefore(effectiveOpening) || reservationTime.isAfter(effectiveClosing)) {
+			throw new IllegalArgumentException(
+				"Chỉ được đặt bàn trong giờ làm việc: " + effectiveOpening + " - " + effectiveClosing + 
+				" (Giờ mở cửa: " + opening + " - " + closing + ")"
+			);
 		}
 		
 		// Lấy user từ username
 		User user = userService.findByUsername(username)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
 		
 		// Lấy table
 		TableEntity table = tableService.getTableById(request.getTableId())
-				.orElseThrow(() -> new RuntimeException("Table not found"));
+				.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn với ID: " + request.getTableId()));
 		
 		// Kiểm tra số lượng người không vượt quá sức chứa của bàn
 		if (request.getPartySize() > table.getCapacity()) {
-			throw new IllegalArgumentException("Số lượng người vượt quá sức chứa của bàn này!");
+			throw new IllegalArgumentException(
+				"Số lượng người (" + request.getPartySize() + ") vượt quá sức chứa của bàn này (" + table.getCapacity() + " người)!"
+			);
 		}
 		
 		// Kiểm tra không cho đặt bàn nếu thời gian đặt < min-advance-minutes so với hiện tại
@@ -145,20 +177,26 @@ public class ReservationService {
 			throw new IllegalArgumentException("Bạn phải đặt bàn trước ít nhất " + schedulerConfig.reservationMinAdvanceMinutes + " phút!");
 		}
 		
-		// Kiểm tra trùng lịch đặt bàn nâng cao (1 tiếng đặt + 30 phút đệm)
+		// Kiểm tra trùng lịch đặt bàn nâng cao với thời gian nghỉ giữa ca
 		LocalDateTime newStart = request.getReservationDatetime();
-		LocalDateTime newEnd = newStart.plusMinutes(schedulerConfig.reservationDurationMinutes);
+		LocalDateTime newEnd = newStart.plusMinutes(schedulerConfig.reservationDurationMinutes); // 90 phút phục vụ
+		
 		List<Reservation> existing = getAllReservations().stream()
 			.filter(r -> r.getTable().getId().equals(table.getId()))
 			.filter(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED)
 			.filter(r -> {
 				LocalDateTime oldStart = r.getReservationDatetime();
 				LocalDateTime oldEnd = oldStart.plusMinutes(schedulerConfig.reservationDurationMinutes + schedulerConfig.reservationBufferAfterMinutes);
+				// Kiểm tra xung đột: ca mới bắt đầu trước khi ca cũ kết thúc hoàn toàn
 				return newStart.isBefore(oldEnd) && newEnd.isAfter(oldStart);
 			})
 			.toList();
 		if (!existing.isEmpty()) {
-			throw new IllegalArgumentException("Bàn này đã có người đặt hoặc đang nghỉ giữa ca trong khung giờ này!");
+			throw new IllegalArgumentException(
+				"Bàn này đã có người đặt trong khung giờ này! " +
+				"Thời gian phục vụ: " + schedulerConfig.reservationDurationMinutes + " phút, " +
+				"Thời gian nghỉ giữa ca: " + schedulerConfig.reservationBufferAfterMinutes + " phút"
+			);
 		}
 		
 		// Tạo reservation entity

@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import com.coffeeshop.entity.RefreshToken;
 
 @Service
 public class AuthService {
@@ -55,15 +56,26 @@ public class AuthService {
         }
     }
 
-    public ResponseEntity<?> logout(UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.badRequest().body("Không xác định được người dùng!");
+    public ResponseEntity<?> logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Refresh token không được để trống!");
         }
-        User user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
-        if (user == null) {
-            return ResponseEntity.badRequest().body("Không tìm thấy người dùng!");
+        
+        // Tìm và revoke refresh token
+        var tokenOpt = refreshTokenService.findByToken(refreshToken);
+        if (tokenOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Refresh token không hợp lệ!");
         }
+        
+        RefreshToken token = tokenOpt.get();
+        User user = token.getUser();
+        
+        // Revoke refresh token
+        refreshTokenService.revokeToken(token);
+        
+        // Xóa tất cả refresh token của user
         refreshTokenService.deleteByUser(user);
+        
         return ResponseEntity.ok("Đăng xuất thành công!");
     }
 

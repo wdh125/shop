@@ -78,6 +78,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleGlobalException(
             Exception ex, WebRequest request) {
         
+        // Log chi tiết lỗi để debug
+        System.err.println("=== INTERNAL SERVER ERROR ===");
+        System.err.println("Exception Type: " + ex.getClass().getSimpleName());
+        System.err.println("Exception Message: " + ex.getMessage());
+        System.err.println("Request Path: " + request.getDescription(false));
+        System.err.println("Stack Trace:");
+        ex.printStackTrace();
+        System.err.println("=============================");
+        
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(
             "Đã xảy ra lỗi nội bộ. Vui lòng thử lại sau.",
             "InternalServerError",
@@ -85,10 +94,6 @@ public class GlobalExceptionHandler {
             LocalDateTime.now().format(TIMESTAMP_FORMATTER),
             500
         );
-        
-        // Log the actual exception for debugging (but don't expose it to client)
-        System.err.println("Internal Server Error: " + ex.getMessage());
-        ex.printStackTrace();
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }

@@ -1,7 +1,6 @@
 package com.coffeeshop.dto.customer.response;
 
 import com.coffeeshop.entity.TableEntity;
-import com.coffeeshop.enums.TableStatus;
 
 public class CustomerTableResponseDTO {
     private Integer id;

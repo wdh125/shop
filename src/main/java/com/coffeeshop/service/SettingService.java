@@ -68,7 +68,6 @@ public class SettingService {
 		setting.setSettingValue(request.getValue());
 		setting.setDescription(request.getDescription());
 		setting.setIsActive(request.getIsActive());
-		setting.setCreatedAt(LocalDateTime.now());
 		setting.setUpdatedAt(LocalDateTime.now());
 		
 		Setting savedSetting = saveSetting(setting);
@@ -95,7 +94,6 @@ public class SettingService {
 		dto.setValue(setting.getSettingValue());
 		dto.setDescription(setting.getDescription());
 		dto.setIsActive(setting.getIsActive());
-		dto.setCreatedAt(setting.getCreatedAt());
 		dto.setUpdatedAt(setting.getUpdatedAt());
 		return dto;
 	}

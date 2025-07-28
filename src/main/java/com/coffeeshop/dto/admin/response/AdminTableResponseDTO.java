@@ -1,7 +1,6 @@
 package com.coffeeshop.dto.admin.response;
 
 import com.coffeeshop.entity.TableEntity;
-import com.coffeeshop.enums.TableStatus;
 import java.time.LocalDateTime;
 
 public class AdminTableResponseDTO {

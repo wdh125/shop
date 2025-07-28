@@ -176,7 +176,25 @@ public class PaymentService {
     }
 
     public List<CustomerPaymentResponseDTO> getCustomerPaymentDTOsByOrderId(Integer orderId) {
-        return getPaymentsByOrderId(orderId).stream().map(this::toCustomerPaymentResponseDTO).toList();
+        List<Payment> payments = getPaymentsByOrderId(orderId);
+        return payments.stream()
+                .map(this::toCustomerPaymentResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<CustomerPaymentResponseDTO> getCustomerPaymentDTOsByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        
+        // Lấy tất cả payments và filter theo customer
+        List<Payment> allPayments = paymentRepository.findAll();
+        List<Payment> userPayments = allPayments.stream()
+                .filter(payment -> payment.getOrder().getCustomer().getId().equals(user.getId()))
+                .collect(Collectors.toList());
+        
+        return userPayments.stream()
+                .map(this::toCustomerPaymentResponseDTO)
+                .collect(Collectors.toList());
     }
 
     public AdminPaymentResponseDTO updatePaymentStatusByAdminAndReturnDTO(Integer id, AdminPaymentStatusUpdateDTO request) {
