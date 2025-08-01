@@ -1,0 +1,13 @@
+package com.coffeeshop.enums;
+
+public enum NotificationType {
+    ORDER_CREATED,
+    ORDER_CONFIRMED,
+    ORDER_READY,
+    ORDER_COMPLETED,
+    ORDER_CANCELLED,
+    RESERVATION_CONFIRMED,
+    RESERVATION_REMINDER,
+    RESERVATION_CANCELLED,
+    GENERAL
+}

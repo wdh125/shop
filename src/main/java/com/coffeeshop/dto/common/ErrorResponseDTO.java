@@ -1,6 +1,7 @@
 package com.coffeeshop.dto.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Map;
 
 /**
  * DTO chuẩn hóa phản hồi khi có lỗi (exception, validation, ...)
@@ -13,6 +14,7 @@ public class ErrorResponseDTO {
     private String path;         // API endpoint gây lỗi
     private String timestamp;    // Thời điểm lỗi (ISO format)
     private Integer status;      // HTTP status code (400, 404, 500...)
+    private Map<String, Object> details;  // Additional error details (errorCode, field, rejectedValue, etc.)
 
     public ErrorResponseDTO() {}
     
@@ -28,6 +30,15 @@ public class ErrorResponseDTO {
         this.status = status;
     }
     
+    public ErrorResponseDTO(String message, String error, String path, String timestamp, Integer status, Map<String, Object> details) {
+        this.message = message;
+        this.error = error;
+        this.path = path;
+        this.timestamp = timestamp;
+        this.status = status;
+        this.details = details;
+    }
+    
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
     public String getError() { return error; }
@@ -38,4 +49,6 @@ public class ErrorResponseDTO {
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+    public Map<String, Object> getDetails() { return details; }
+    public void setDetails(Map<String, Object> details) { this.details = details; }
 } 
