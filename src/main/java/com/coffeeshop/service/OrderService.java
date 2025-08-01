@@ -4,6 +4,7 @@ import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.shared.OrderItemDTO;
 import com.coffeeshop.entity.*;
+import com.coffeeshop.enums.NotificationType;
 import com.coffeeshop.enums.OrderItemStatus;
 import com.coffeeshop.enums.OrderStatus;
 import com.coffeeshop.enums.PaymentStatus;
@@ -30,6 +31,7 @@ public class OrderService {
     @Autowired private TableRepository tableRepository;
     @Autowired private ReservationRepository reservationRepository; // Thêm ReservationRepository
     @Autowired private SettingService settingService;
+    @Autowired private NotificationService notificationService;
 
 	public List<Order> getAllOrders() {
 		return orderRepository.findAll();
@@ -117,15 +119,41 @@ public class OrderService {
         }
         orderItemRepository.saveAll(orderItems);
 
+        // Create notification for order creation
+        notificationService.createOrderNotification(
+            user, 
+            savedOrder, 
+            NotificationType.ORDER_CREATED,
+            "Đơn hàng mới được tạo",
+            "Đơn hàng " + savedOrder.getOrderNumber() + " đã được tạo thành công với tổng tiền " + 
+            savedOrder.getTotalAmount() + "đ tại bàn " + savedOrder.getTable().getTableNumber()
+        );
+
         return savedOrder;
     }
 
     public Order updateOrderStatus(Integer orderId, OrderStatus status) {
         Order order = getOrderById(orderId);
+        OrderStatus oldStatus = order.getStatus();
         order.setStatus(status);
         order.setUpdatedAt(LocalDateTime.now());
-		return orderRepository.save(order);
-	}
+        Order savedOrder = orderRepository.save(order);
+
+        // Create notification for status change
+        String statusMessage = getStatusChangeMessage(oldStatus, status);
+        if (statusMessage != null) {
+            NotificationType notificationType = getNotificationTypeForStatus(status);
+            notificationService.createOrderNotification(
+                order.getCustomer(),
+                savedOrder,
+                notificationType,
+                "Trạng thái đơn hàng thay đổi",
+                "Đơn hàng " + savedOrder.getOrderNumber() + " " + statusMessage
+            );
+        }
+
+        return savedOrder;
+    }
 
     public Order updatePaymentMethod(Integer orderId, com.coffeeshop.enums.PaymentMethod paymentMethod) {
         Order order = orderRepository.findById(orderId)
@@ -225,5 +253,34 @@ public class OrderService {
         }).collect(Collectors.toList());
         dto.setItems(items);
         return dto;
+    }
+
+    // Helper methods for notification
+    private String getStatusChangeMessage(OrderStatus oldStatus, OrderStatus newStatus) {
+        switch (newStatus) {
+            case PREPARING:
+                return "đang được chuẩn bị";
+            case SERVED:
+                return "đã được phục vụ";
+            case COMPLETED:
+                return "đã hoàn thành";
+            case CANCELLED:
+                return "đã bị hủy";
+            case PAID:
+                return "đã được thanh toán";
+            default:
+                return null;
+        }
+    }
+
+    private NotificationType getNotificationTypeForStatus(OrderStatus status) {
+        switch (status) {
+            case CANCELLED:
+                return NotificationType.ORDER_CANCELLED;
+            case COMPLETED:
+                return NotificationType.ORDER_COMPLETED;
+            default:
+                return NotificationType.ORDER_STATUS_CHANGED;
+        }
     }
 }
