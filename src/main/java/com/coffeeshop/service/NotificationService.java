@@ -1,51 +1,200 @@
 package com.coffeeshop.service;
 
-import com.coffeeshop.entity.Notification;
-import com.coffeeshop.entity.User;
-import com.coffeeshop.entity.Order;
-import com.coffeeshop.entity.Reservation;
-import com.coffeeshop.enums.NotificationType;
-
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
-public interface NotificationService {
-    // Lấy tất cả thông báo của user, mới nhất trước
-    List<Notification> getAllByUser(User user);
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-    // Lấy thông báo theo nhóm/type
-    List<Notification> getByUserAndType(User user, NotificationType type);
+import com.coffeeshop.dto.notification.request.NotificationCreateRequestDTO;
+import com.coffeeshop.dto.notification.response.NotificationListResponseDTO;
+import com.coffeeshop.dto.notification.response.NotificationResponseDTO;
+import com.coffeeshop.entity.Notification;
+import com.coffeeshop.entity.Order;
+import com.coffeeshop.entity.Payment;
+import com.coffeeshop.entity.Reservation;
+import com.coffeeshop.entity.User;
+import com.coffeeshop.enums.NotificationType;
+import com.coffeeshop.repository.NotificationRepository;
+import com.coffeeshop.repository.OrderRepository;
+import com.coffeeshop.repository.PaymentRepository;
+import com.coffeeshop.repository.ReservationRepository;
+import com.coffeeshop.repository.UserRepository;
 
-    // Lấy thông báo chưa đọc của user
-    List<Notification> getUnreadByUser(User user);
+@Service
+@Transactional
+public class NotificationService {
 
-    // Đếm số thông báo chưa đọc của user
-    long countUnreadByUser(User user);
+    @Autowired
+    private NotificationRepository notificationRepository;
 
-    // Đếm số chưa đọc theo nhóm/type
-    long countUnreadByUserAndType(User user, NotificationType type);
+    @Autowired
+    private UserRepository userRepository;
 
-    // Đánh dấu đã đọc 1 thông báo
-    void markAsRead(Integer notificationId);
+    @Autowired
+    private OrderRepository orderRepository;
 
-    // Đánh dấu đã đọc tất cả thông báo của user
-    void markAllAsRead(User user);
+    @Autowired
+    private PaymentRepository paymentRepository;
 
-    // Đánh dấu đã đọc tất cả theo nhóm/type
-    void markAllAsReadByType(User user, NotificationType type);
+    @Autowired
+    private ReservationRepository reservationRepository;
 
-    // Xóa 1 thông báo
-    void delete(Integer notificationId);
+    public NotificationResponseDTO createNotification(NotificationCreateRequestDTO requestDTO) {
+        User user = userRepository.findById(requestDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-    // Xóa tất cả thông báo theo nhóm/type
-    void deleteAllByUserAndType(User user, NotificationType type);
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setType(requestDTO.getType());
+        notification.setTitle(requestDTO.getTitle());
+        notification.setMessage(requestDTO.getMessage());
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
 
-    // Tạo mới thông báo (kiểu cũ: truyền object)
-    Notification createNotification(Notification notification);
+        // Set related entities using proper entity relationships
+        if (requestDTO.getRelatedOrderId() != null) {
+            Order order = orderRepository.findById(requestDTO.getRelatedOrderId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+            notification.setRelatedOrder(order);
+        }
 
-    // Tạo mới notification từ các tham số rời (sử dụng entities thay vì IDs)
-    Notification createNotification(NotificationType type, User user, String content, Order order, Reservation reservation);
+        if (requestDTO.getRelatedPaymentId() != null) {
+            Payment payment = paymentRepository.findById(requestDTO.getRelatedPaymentId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch"));
+            notification.setRelatedPayment(payment);
+        }
 
-    // Lấy thông báo theo id
-    Optional<Notification> getById(Integer notificationId);
+        if (requestDTO.getRelatedReservationId() != null) {
+            Reservation reservation = reservationRepository.findById(requestDTO.getRelatedReservationId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+            notification.setRelatedReservation(reservation);
+        }
+
+        notification = notificationRepository.save(notification);
+        return convertToResponseDTO(notification);
+    }
+
+    public NotificationListResponseDTO getUserNotifications(Integer userId, int page, int size, Boolean onlyUnread) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Notification> notificationPage;
+
+        if (onlyUnread != null && onlyUnread) {
+            notificationPage = notificationRepository.findByUserAndIsReadOrderByCreatedAtDesc(user, false, pageable);
+        } else {
+            notificationPage = notificationRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+        }
+
+        List<NotificationResponseDTO> notifications = notificationPage.getContent().stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+
+        long unreadCount = notificationRepository.countByUserAndIsReadFalse(user);
+
+        NotificationListResponseDTO response = new NotificationListResponseDTO();
+        response.setNotifications(notifications);
+        response.setUnreadCount(unreadCount);
+        response.setTotalPages(notificationPage.getTotalPages());
+        response.setTotalElements(notificationPage.getTotalElements());
+        response.setCurrentPage(page);
+        response.setPageSize(size);
+
+        return response;
+    }
+
+    public void markAsRead(Integer notificationId, Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        int updated = notificationRepository.markAsReadById(notificationId, user);
+        if (updated == 0) {
+            throw new RuntimeException("Không tìm thấy thông báo hoặc không có quyền truy cập");
+        }
+    }
+
+    public void markAllAsRead(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        notificationRepository.markAllAsReadForUser(user);
+    }
+
+    public long getUnreadCount(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        return notificationRepository.countByUserAndIsReadFalse(user);
+    }
+
+    // Helper methods for creating notifications for specific events
+    public void createOrderNotification(User user, Order order, NotificationType type, String title, String message) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setRelatedOrder(order);
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    public void createPaymentNotification(User user, Payment payment, NotificationType type, String title, String message) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setRelatedPayment(payment);
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    public void createReservationNotification(User user, Reservation reservation, NotificationType type, String title, String message) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setType(type);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setRelatedReservation(reservation);
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    private NotificationResponseDTO convertToResponseDTO(Notification notification) {
+        NotificationResponseDTO dto = new NotificationResponseDTO();
+        dto.setId(notification.getId());
+        dto.setType(notification.getType());
+        dto.setTitle(notification.getTitle());
+        dto.setMessage(notification.getMessage());
+        dto.setIsRead(notification.getIsRead());
+        dto.setCreatedAt(notification.getCreatedAt());
+        dto.setReadAt(notification.getReadAt());
+
+        // Set related entity information
+        if (notification.getRelatedOrder() != null) {
+            dto.setRelatedOrderId(notification.getRelatedOrder().getId());
+            dto.setRelatedOrderNumber(notification.getRelatedOrder().getOrderNumber());
+        }
+
+        if (notification.getRelatedPayment() != null) {
+            dto.setRelatedPaymentId(notification.getRelatedPayment().getId());
+        }
+
+        if (notification.getRelatedReservation() != null) {
+            dto.setRelatedReservationId(notification.getRelatedReservation().getId());
+        }
+
+        return dto;
+    }
 }

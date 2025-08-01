@@ -1,8 +1,14 @@
 package com.coffeeshop.security;
 
 import io.jsonwebtoken.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import com.coffeeshop.entity.User;
+import com.coffeeshop.repository.UserRepository;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +23,9 @@ public class JwtUtils {
 
     @Value("${app.jwtExpirationMs}")
     private long jwtExpirationMs;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // Tạo token từ username
     public String generateJwtToken(String username) {
@@ -61,5 +70,17 @@ public class JwtUtils {
             System.err.println("❌ JWT claims string is empty: " + e.getMessage());
         }
         return false;
+    }
+
+    // Get user ID from authentication
+    public Integer getUserIdFromAuthentication(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+            return user.getId();
+        }
+        throw new RuntimeException("Không thể lấy thông tin người dùng từ authentication");
     }
 } 

@@ -8,6 +8,7 @@ import com.coffeeshop.dto.customer.response.CustomerPaymentResponseDTO;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.Payment;
 import com.coffeeshop.entity.User;
+import com.coffeeshop.enums.NotificationType;
 import com.coffeeshop.enums.OrderStatus;
 import com.coffeeshop.enums.PaymentProcessStatus;
 import com.coffeeshop.enums.PaymentStatus;
@@ -42,6 +43,9 @@ public class PaymentService {
 
     @Autowired
     private OrderSchedulingService orderSchedulingService;
+
+    @Autowired
+    private NotificationService notificationService;
 
 	public List<Payment> getAllPayments() {
 		return paymentRepository.findAll();
@@ -95,8 +99,27 @@ public class PaymentService {
             order.setUpdatedAt(LocalDateTime.now());
             orderRepository.save(order);
 
+            // Create notification for successful payment
+            notificationService.createPaymentNotification(
+                order.getCustomer(),
+                savedPayment,
+                NotificationType.PAYMENT_RECEIVED,
+                "Thanh toán thành công",
+                "Thanh toán cho đơn hàng " + order.getOrderNumber() + 
+                " đã được xử lý thành công với số tiền " + savedPayment.getAmount() + "đ"
+            );
+
             // Kích hoạt tác vụ bất đồng bộ để theo dõi và cập nhật trạng thái chuẩn bị/sẵn sàng
             orderSchedulingService.scheduleOrderStatusUpdate(order.getId());
+        } else if (savedPayment.getStatus() == PaymentProcessStatus.FAILED) {
+            // Create notification for failed payment
+            notificationService.createPaymentNotification(
+                order.getCustomer(),
+                savedPayment,
+                NotificationType.PAYMENT_FAILED,
+                "Thanh toán thất bại",
+                "Thanh toán cho đơn hàng " + order.getOrderNumber() + " đã thất bại. Vui lòng thử lại."
+            );
         }
 
         return savedPayment;

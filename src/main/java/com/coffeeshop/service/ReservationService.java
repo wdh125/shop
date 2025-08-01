@@ -15,6 +15,7 @@ import com.coffeeshop.entity.User;
 import com.coffeeshop.entity.TableEntity;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.repository.ReservationRepository;
+import com.coffeeshop.enums.NotificationType;
 import com.coffeeshop.enums.ReservationStatus;
 import com.coffeeshop.dto.admin.response.AdminReservationResponseDTO;
 import com.coffeeshop.dto.customer.response.CustomerReservationResponseDTO;
@@ -41,6 +42,9 @@ public class ReservationService {
 	@Autowired
 	private SchedulerConfig schedulerConfig;
 
+	@Autowired
+	private NotificationService notificationService;
+
 	// Danh sách ngày nghỉ (có thể lấy từ config hoặc DB)
 	private static final Set<DayOfWeek> HOLIDAYS = Set.of(DayOfWeek.SUNDAY);
 
@@ -54,11 +58,27 @@ public class ReservationService {
 	}
 
 	public Reservation saveReservation(Reservation reservation) {
-		if (reservation.getId() == null) {
+		boolean isNew = reservation.getId() == null;
+		
+		if (isNew) {
 			reservation.setCreatedAt(java.time.LocalDateTime.now());
 		}
 		reservation.setUpdatedAt(java.time.LocalDateTime.now());
-		return reservationRepository.save(reservation);
+		Reservation savedReservation = reservationRepository.save(reservation);
+
+		// Create notification for new reservation
+		if (isNew) {
+			notificationService.createReservationNotification(
+				reservation.getCustomer(),
+				savedReservation,
+				NotificationType.RESERVATION_CONFIRMED,
+				"Đặt bàn mới được tạo",
+				"Đặt bàn của bạn tại bàn " + reservation.getTable().getTableNumber() + 
+				" vào lúc " + reservation.getReservationDatetime() + " đã được tạo thành công"
+			);
+		}
+
+		return savedReservation;
 	}
 
 	public void deleteReservation(Integer id) {
@@ -82,15 +102,42 @@ public class ReservationService {
 		}
 		reservation.setStatus(ReservationStatus.CANCELLED);
 		reservation.setUpdatedAt(java.time.LocalDateTime.now());
-		return reservationRepository.save(reservation);
+		Reservation savedReservation = reservationRepository.save(reservation);
+
+		// Create notification for reservation cancellation
+		notificationService.createReservationNotification(
+			reservation.getCustomer(),
+			savedReservation,
+			NotificationType.RESERVATION_CANCELLED,
+			"Đặt bàn đã bị hủy",
+			"Đặt bàn của bạn tại bàn " + reservation.getTable().getTableNumber() + 
+			" vào lúc " + reservation.getReservationDatetime() + " đã được hủy thành công"
+		);
+
+		return savedReservation;
 	}
 
 	public Reservation updateReservationStatus(Integer reservationId, ReservationStatus status) {
 		Reservation reservation = reservationRepository.findById(reservationId)
 				.orElseThrow(() -> new RuntimeException("Reservation not found"));
+		ReservationStatus oldStatus = reservation.getStatus();
 		reservation.setStatus(status);
 		reservation.setUpdatedAt(java.time.LocalDateTime.now());
-		return reservationRepository.save(reservation);
+		Reservation savedReservation = reservationRepository.save(reservation);
+
+		// Create notification for status change
+		if (status == ReservationStatus.CONFIRMED && oldStatus != ReservationStatus.CONFIRMED) {
+			notificationService.createReservationNotification(
+				reservation.getCustomer(),
+				savedReservation,
+				NotificationType.RESERVATION_CONFIRMED,
+				"Đặt bàn đã được xác nhận",
+				"Đặt bàn của bạn tại bàn " + reservation.getTable().getTableNumber() + 
+				" vào lúc " + reservation.getReservationDatetime() + " đã được xác nhận"
+			);
+		}
+
+		return savedReservation;
 	}
 
 	// ===== Các method mới cho DTO mapping =====
