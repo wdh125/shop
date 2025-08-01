@@ -1,6 +1,10 @@
 package com.coffeeshop.service;
 
 import com.coffeeshop.entity.User;
+import com.coffeeshop.exception.UserNotFoundException;
+import com.coffeeshop.exception.UserAlreadyExistsException;
+import com.coffeeshop.exception.InvalidCredentialsException;
+import com.coffeeshop.exception.ValidationException;
 import com.coffeeshop.repository.UserRepository;
 import com.coffeeshop.dto.shared.request.UserProfileUpdateRequestDTO;
 import com.coffeeshop.dto.shared.response.UserProfileResponseDTO;
@@ -62,18 +66,18 @@ public class UserService {
     // New methods for DTO mapping and business logic
     public UserProfileResponseDTO getCurrentUserProfile(String username) {
         User user = findByUsername(username)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng!", username));
         return UserProfileResponseDTO.fromEntity(user);
     }
 
     public String updateUserProfile(String username, UserProfileUpdateRequestDTO request) {
         User user = findByUsername(username)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng!", username));
         
         // Kiểm tra email đã tồn tại chưa (nếu thay đổi email)
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Email đã được sử dụng!");
+                throw new UserAlreadyExistsException("Email đã được sử dụng!", request.getEmail());
             }
             user.setEmail(request.getEmail());
         }
@@ -93,14 +97,14 @@ public class UserService {
         if (request.getNewPassword() != null && !request.getNewPassword().trim().isEmpty()) {
             // Kiểm tra mật khẩu cũ
             if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
-                throw new IllegalArgumentException("Vui lòng nhập mật khẩu hiện tại!");
+                throw new ValidationException("Vui lòng nhập mật khẩu hiện tại!");
             }
             if (!matchesPassword(request.getCurrentPassword(), user.getPassword())) {
-                throw new IllegalArgumentException("Mật khẩu hiện tại không đúng!");
+                throw new InvalidCredentialsException("Mật khẩu hiện tại không đúng!");
             }
             // Kiểm tra xác nhận mật khẩu mới
             if (request.getConfirmPassword() == null || !request.getNewPassword().equals(request.getConfirmPassword())) {
-                throw new IllegalArgumentException("Mật khẩu xác nhận không khớp!");
+                throw new ValidationException("Mật khẩu xác nhận không khớp!");
             }
             user.setPassword(encodePassword(request.getNewPassword()));
         }
@@ -120,16 +124,16 @@ public class UserService {
     public AdminUserResponseDTO getAdminUserById(Integer id) {
         return getUserById(id)
             .map(AdminUserResponseDTO::fromEntity)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy user!", id));
     }
 
     public AdminUserResponseDTO createUser(AdminUserRequestDTO request) {
         // Kiểm tra username và email đã tồn tại
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username đã tồn tại!");
+            throw new UserAlreadyExistsException("Username đã tồn tại!", request.getUsername());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email đã được sử dụng!");
+            throw new UserAlreadyExistsException("Email đã được sử dụng!", request.getEmail());
         }
         
         User user = new User();
@@ -150,18 +154,18 @@ public class UserService {
 
     public AdminUserResponseDTO updateUser(Integer id, AdminUserRequestDTO request) {
         User user = getUserById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy user!", id));
         
         // Kiểm tra username và email đã tồn tại (nếu thay đổi)
         if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsername(request.getUsername())) {
-                throw new IllegalArgumentException("Username đã tồn tại!");
+                throw new UserAlreadyExistsException("Username đã tồn tại!", request.getUsername());
             }
             user.setUsername(request.getUsername());
         }
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw new IllegalArgumentException("Email đã được sử dụng!");
+                throw new UserAlreadyExistsException("Email đã được sử dụng!", request.getEmail());
             }
             user.setEmail(request.getEmail());
         }
@@ -183,7 +187,7 @@ public class UserService {
 
     public AdminUserResponseDTO toggleUserActive(Integer id) {
         User user = getUserById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy user!", id));
         user.setIsActive(user.getIsActive() == null ? false : !user.getIsActive());
         User savedUser = saveUser(user);
         return AdminUserResponseDTO.fromEntity(savedUser);

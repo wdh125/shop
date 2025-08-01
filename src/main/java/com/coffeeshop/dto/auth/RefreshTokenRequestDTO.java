@@ -1,6 +1,7 @@
 package com.coffeeshop.dto.auth;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * DTO cho request refresh token
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RefreshTokenRequestDTO {
+    @NotBlank(message = "Refresh token không được để trống")
     private String refreshToken;  // Refresh token để lấy access token mới
 
     // Constructor mặc định
