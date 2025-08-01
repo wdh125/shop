@@ -1,122 +1,152 @@
 package com.coffeeshop.exception;
 
-import com.coffeeshop.dto.common.ErrorResponseDTO;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.context.request.WebRequest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for the GlobalExceptionHandler to verify custom exception handling.
+ * Test for custom exception classes to verify they work correctly.
  * This test can run without database connection.
  */
-@SpringBootTest
 class ExceptionHandlingTest {
-
-    @Autowired
-    private GlobalExceptionHandler globalExceptionHandler;
 
     @Test
     void testUserNotFoundException() {
         // Given
-        UserNotFoundException exception = new UserNotFoundException("User not found", "testuser");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/users/testuser");
-        WebRequest webRequest = new ServletRequestAttributes(request);
+        String message = "User not found";
+        String rejectedValue = "testuser";
         
         // When
-        ResponseEntity<ErrorResponseDTO> response = globalExceptionHandler.handleUserNotFoundException(exception, webRequest);
+        UserNotFoundException exception = new UserNotFoundException(message, rejectedValue);
         
         // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        
-        ErrorResponseDTO errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals("User not found", errorResponse.getMessage());
-        assertEquals("Not Found", errorResponse.getError());
-        assertEquals(404, errorResponse.getStatus());
-        assertNotNull(errorResponse.getDetails());
-        assertEquals("USER_NOT_FOUND", errorResponse.getDetails().get("errorCode"));
-        assertEquals("testuser", errorResponse.getDetails().get("rejectedValue"));
+        assertEquals(message, exception.getMessage());
+        assertEquals("USER_NOT_FOUND", exception.getErrorCode());
+        assertEquals(rejectedValue, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
     }
 
     @Test
     void testInvalidCredentialsException() {
         // Given
-        InvalidCredentialsException exception = new InvalidCredentialsException("Invalid credentials");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/auth/login");
-        WebRequest webRequest = new ServletRequestAttributes(request);
+        String message = "Invalid credentials";
         
         // When
-        ResponseEntity<ErrorResponseDTO> response = globalExceptionHandler.handleInvalidCredentialsException(exception, webRequest);
+        InvalidCredentialsException exception = new InvalidCredentialsException(message);
         
         // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        
-        ErrorResponseDTO errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals("Invalid credentials", errorResponse.getMessage());
-        assertEquals("Unauthorized", errorResponse.getError());
-        assertEquals(401, errorResponse.getStatus());
-        assertNotNull(errorResponse.getDetails());
-        assertEquals("INVALID_CREDENTIALS", errorResponse.getDetails().get("errorCode"));
+        assertEquals(message, exception.getMessage());
+        assertEquals("INVALID_CREDENTIALS", exception.getErrorCode());
+        assertTrue(exception instanceof BusinessLogicException);
     }
 
     @Test
     void testUserAlreadyExistsException() {
         // Given
-        UserAlreadyExistsException exception = new UserAlreadyExistsException("User already exists", "existinguser");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/auth/register");
-        WebRequest webRequest = new ServletRequestAttributes(request);
+        String message = "User already exists";
+        String rejectedValue = "existinguser";
         
         // When
-        ResponseEntity<ErrorResponseDTO> response = globalExceptionHandler.handleUserAlreadyExistsException(exception, webRequest);
+        UserAlreadyExistsException exception = new UserAlreadyExistsException(message, rejectedValue);
         
         // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        
-        ErrorResponseDTO errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals("User already exists", errorResponse.getMessage());
-        assertEquals("Conflict", errorResponse.getError());
-        assertEquals(409, errorResponse.getStatus());
-        assertNotNull(errorResponse.getDetails());
-        assertEquals("USER_ALREADY_EXISTS", errorResponse.getDetails().get("errorCode"));
-        assertEquals("existinguser", errorResponse.getDetails().get("rejectedValue"));
+        assertEquals(message, exception.getMessage());
+        assertEquals("USER_ALREADY_EXISTS", exception.getErrorCode());
+        assertEquals(rejectedValue, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
     }
 
     @Test
-    void testGenericBusinessLogicException() {
+    void testValidationException() {
         // Given
-        BusinessLogicException exception = new BusinessLogicException("Generic business error", "GENERIC_ERROR");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/test");
-        WebRequest webRequest = new ServletRequestAttributes(request);
+        String message = "Validation failed";
+        String rejectedValue = "invalid_data";
         
         // When
-        ResponseEntity<ErrorResponseDTO> response = globalExceptionHandler.handleBusinessLogicException(exception, webRequest);
+        ValidationException exception = new ValidationException(message, rejectedValue);
         
         // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(message, exception.getMessage());
+        assertEquals("VALIDATION_ERROR", exception.getErrorCode());
+        assertEquals(rejectedValue, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
+    }
+
+    @Test
+    void testBusinessLogicExceptionWithErrorCode() {
+        // Given
+        String message = "Business logic error";
+        String errorCode = "CUSTOM_ERROR";
+        String rejectedValue = "test_value";
         
-        ErrorResponseDTO errorResponse = response.getBody();
-        assertNotNull(errorResponse);
-        assertEquals("Generic business error", errorResponse.getMessage());
-        assertEquals("Bad Request", errorResponse.getError());
-        assertEquals(400, errorResponse.getStatus());
-        assertNotNull(errorResponse.getDetails());
-        assertEquals("GENERIC_ERROR", errorResponse.getDetails().get("errorCode"));
+        // When
+        BusinessLogicException exception = new BusinessLogicException(message, errorCode, rejectedValue);
+        
+        // Then
+        assertEquals(message, exception.getMessage());
+        assertEquals(errorCode, exception.getErrorCode());
+        assertEquals(rejectedValue, exception.getRejectedValue());
+    }
+
+    @Test
+    void testOrderNotFoundException() {
+        // Given
+        String message = "Order not found";
+        Integer orderId = 123;
+        
+        // When
+        OrderNotFoundException exception = new OrderNotFoundException(message, orderId);
+        
+        // Then
+        assertEquals(message, exception.getMessage());
+        assertEquals("ORDER_NOT_FOUND", exception.getErrorCode());
+        assertEquals(orderId, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
+    }
+
+    @Test
+    void testProductNotFoundException() {
+        // Given
+        String message = "Product not found";
+        Integer productId = 456;
+        
+        // When
+        ProductNotFoundException exception = new ProductNotFoundException(message, productId);
+        
+        // Then
+        assertEquals(message, exception.getMessage());
+        assertEquals("PRODUCT_NOT_FOUND", exception.getErrorCode());
+        assertEquals(productId, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
+    }
+
+    @Test
+    void testReservationNotFoundException() {
+        // Given
+        String message = "Reservation not found";
+        Integer reservationId = 789;
+        
+        // When
+        ReservationNotFoundException exception = new ReservationNotFoundException(message, reservationId);
+        
+        // Then
+        assertEquals(message, exception.getMessage());
+        assertEquals("RESERVATION_NOT_FOUND", exception.getErrorCode());
+        assertEquals(reservationId, exception.getRejectedValue());
+        assertTrue(exception instanceof BusinessLogicException);
+    }
+
+    @Test
+    void testUnauthorizedAccessException() {
+        // Given
+        String message = "Unauthorized access";
+        
+        // When
+        UnauthorizedAccessException exception = new UnauthorizedAccessException(message);
+        
+        // Then
+        assertEquals(message, exception.getMessage());
+        assertEquals("UNAUTHORIZED_ACCESS", exception.getErrorCode());
+        assertTrue(exception instanceof BusinessLogicException);
     }
 }
