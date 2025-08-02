@@ -84,16 +84,13 @@ public class AuthServiceImpl implements AuthService {
             
             logger.info("User {} logging out", user.getUsername());
             
-            // Revoke the current refresh token
+            // Chỉ cần revoke token này (set is_revoked = true)
             refreshTokenService.revokeToken(token);
-            
-            // Optionally revoke ALL refresh tokens for this user (more secure)
-            refreshTokenService.deleteByUser(user);
             
             return "Đăng xuất thành công!";
         }
         
-        return "Đăng xuất thành công!"; // Still return success even if token not found
+        return "Đăng xuất thành công!";
     }
 
     @Override
