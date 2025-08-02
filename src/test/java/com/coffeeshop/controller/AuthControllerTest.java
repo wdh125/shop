@@ -8,7 +8,9 @@ import com.coffeeshop.dto.auth.RegisterRequestDTO;
 import com.coffeeshop.exception.InvalidCredentialsException;
 import com.coffeeshop.exception.UserAlreadyExistsException;
 import com.coffeeshop.exception.ValidationException;
+import com.coffeeshop.security.JwtUtils;
 import com.coffeeshop.service.AuthService;
+import com.coffeeshop.service.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +40,12 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+    
+    @MockBean
+    private JwtUtils jwtUtils;
+    
+    @MockBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private ObjectMapper objectMapper;

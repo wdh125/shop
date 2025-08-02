@@ -3,6 +3,8 @@ package com.coffeeshop.controller;
 import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.shared.OrderItemDTO;
+import com.coffeeshop.security.JwtUtils;
+import com.coffeeshop.service.CustomUserDetailsService;
 import com.coffeeshop.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,12 @@ class OrderControllerTest {
 
     @MockBean
     private OrderService orderService;
+    
+    @MockBean
+    private JwtUtils jwtUtils;
+    
+    @MockBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private ObjectMapper objectMapper;

@@ -105,6 +105,17 @@ class OrderServiceTest {
         testOrder.setUpdatedAt(LocalDateTime.now());
     }
     
+    private OrderItem createTestOrderItem() {
+        OrderItem orderItem = new OrderItem();
+        orderItem.setId(1);
+        orderItem.setOrder(testOrder);
+        orderItem.setProduct(testProduct);
+        orderItem.setQuantity(1);
+        orderItem.setUnitPrice(new BigDecimal("50000"));
+        orderItem.setTotalPrice(new BigDecimal("50000"));
+        return orderItem;
+    }
+    
     @Test
     @DisplayName("Get order by ID should return order when exists")
     void getOrderById_WhenOrderExists_ShouldReturnOrder() {
@@ -364,7 +375,7 @@ class OrderServiceTest {
         List<Order> orders = Arrays.asList(testOrder);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(orderRepository.findByCustomerOrderByCreatedAtDesc(testUser)).thenReturn(orders);
-        when(orderItemRepository.findByOrder_Id(1)).thenReturn(Arrays.asList(new OrderItem()));
+        when(orderItemRepository.findByOrder_Id(1)).thenReturn(Arrays.asList(createTestOrderItem()));
         
         // Act
         List<CustomerOrderResponseDTO> result = orderService.getCustomerOrdersByUsername("testuser");

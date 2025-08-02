@@ -106,7 +106,7 @@ class TableRepositoryTest {
     @DisplayName("Update table - Success")
     void updateTable_Success() {
         // Given
-        testTable.setTableNumber("T01-Updated");
+        testTable.setTableNumber("T01-UPD");
         testTable.setCapacity(8);
         testTable.setStatus(TableStatus.OCCUPIED);
         testTable.setLocation("Updated Location");
@@ -116,7 +116,7 @@ class TableRepositoryTest {
         entityManager.flush();
 
         // Then
-        assertThat(updatedTable.getTableNumber()).isEqualTo("T01-Updated");
+        assertThat(updatedTable.getTableNumber()).isEqualTo("T01-UPD");
         assertThat(updatedTable.getCapacity()).isEqualTo(8);
         assertThat(updatedTable.getStatus()).isEqualTo(TableStatus.OCCUPIED);
         assertThat(updatedTable.getLocation()).isEqualTo("Updated Location");
@@ -124,7 +124,7 @@ class TableRepositoryTest {
         // Verify persistence
         Optional<TableEntity> retrievedTable = tableRepository.findById(testTable.getId());
         assertThat(retrievedTable).isPresent();
-        assertThat(retrievedTable.get().getTableNumber()).isEqualTo("T01-Updated");
+        assertThat(retrievedTable.get().getTableNumber()).isEqualTo("T01-UPD");
         assertThat(retrievedTable.get().getCapacity()).isEqualTo(8);
         assertThat(retrievedTable.get().getStatus()).isEqualTo(TableStatus.OCCUPIED);
     }
