@@ -2,7 +2,6 @@ package com.coffeeshop.controller;
 
 import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
-import com.coffeeshop.enums.PaymentMethod;
 import com.coffeeshop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,14 +29,5 @@ public class OrderController {
     @PreAuthorize("isAuthenticated()")
     public List<CustomerOrderResponseDTO> getMyOrders(@AuthenticationPrincipal UserDetails userDetails) {
         return orderService.getCustomerOrdersByUsername(userDetails.getUsername());
-    }
-
-    // Các API cho admin chỉ còn xem/truy vấn/trạng thái nếu cần
-    // Nếu muốn xóa luôn các API cho admin thì có thể xóa các method dưới đây
-
-    public static class UpdatePaymentMethodRequest {
-        private PaymentMethod paymentMethod;
-        public PaymentMethod getPaymentMethod() { return paymentMethod; }
-        public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
     }
 }
