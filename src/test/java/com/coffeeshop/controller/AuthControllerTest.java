@@ -28,6 +28,7 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
+    @SuppressWarnings("deprecation")
     private AuthService authService;
 
     @Autowired

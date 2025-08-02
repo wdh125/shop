@@ -269,7 +269,8 @@ public class GlobalExceptionHandler {
         
         // Special handling for enum conversion errors
         if (ex.getRequiredType() != null && ex.getRequiredType().isEnum()) {
-            Class<? extends Enum> enumClass = (Class<? extends Enum>) ex.getRequiredType();
+            @SuppressWarnings("unchecked")
+            Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) ex.getRequiredType();
             String[] validValues = java.util.Arrays.stream(enumClass.getEnumConstants())
                     .map(Enum::name)
                     .toArray(String[]::new);
