@@ -21,7 +21,7 @@ import com.coffeeshop.repository.UserRepository;
  */
 @TestConfiguration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @Profile("test")
 public class TestSecurityConfig {
 
@@ -46,7 +46,10 @@ public class TestSecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/**",
+                    "/api/auth/login", 
+                    "/api/auth/register", 
+                    "/api/auth/refresh",
+                    "/api/auth/logout",
                     "/api/products/available", 
                     "/api/products/category/**"
                 ).permitAll()
