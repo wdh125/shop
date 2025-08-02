@@ -1,13 +1,10 @@
 package com.coffeeshop.controller;
 
+import com.coffeeshop.config.TestSecurityConfig;
 import com.coffeeshop.dto.admin.request.AdminTableRequestDTO;
 import com.coffeeshop.dto.admin.response.AdminTableResponseDTO;
 import com.coffeeshop.dto.customer.response.CustomerTableResponseDTO;
-import com.coffeeshop.security.JwtAuthenticationFilter;
-import com.coffeeshop.security.JwtUtils;
-import com.coffeeshop.service.CustomUserDetailsService;
 import com.coffeeshop.service.TableService;
-import com.coffeeshop.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,7 +25,6 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -36,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests REST API endpoints for table management
  */
 @WebMvcTest(TableController.class)
+@Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
 class TableControllerTest {
 
@@ -44,18 +42,6 @@ class TableControllerTest {
 
     @MockBean
     private TableService tableService;
-
-    @MockBean
-    private JwtUtils jwtUtils;
-
-    @MockBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    @MockBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @MockBean
-    private UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -184,7 +170,7 @@ class TableControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/tables")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isOk())
@@ -201,7 +187,7 @@ class TableControllerTest {
     void createTable_WithoutAdminRole_ShouldReturn403() throws Exception {
         // Act & Assert
         mockMvc.perform(post("/api/tables")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isForbidden());
@@ -224,7 +210,7 @@ class TableControllerTest {
 
         // Act & Assert
         mockMvc.perform(put("/api/tables/1")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isOk())
@@ -242,7 +228,7 @@ class TableControllerTest {
     void updateTable_WithoutAdminRole_ShouldReturn403() throws Exception {
         // Act & Assert
         mockMvc.perform(put("/api/tables/1")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isForbidden());
@@ -259,7 +245,7 @@ class TableControllerTest {
 
         // Act & Assert
         mockMvc.perform(delete("/api/tables/1")
-                .with(csrf()))
+                )
                 .andExpect(status().isOk());
 
         verify(tableService).deleteTable(1);
@@ -271,7 +257,7 @@ class TableControllerTest {
     void deleteTable_WithoutAdminRole_ShouldReturn403() throws Exception {
         // Act & Assert
         mockMvc.perform(delete("/api/tables/1")
-                .with(csrf()))
+                )
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(tableService);
@@ -287,7 +273,7 @@ class TableControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/tables")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -302,19 +288,19 @@ class TableControllerTest {
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(post("/api/tables")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(put("/api/tables/1")
-                .with(csrf())
+                
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminTableRequest)))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(delete("/api/tables/1")
-                .with(csrf()))
+                )
                 .andExpect(status().isUnauthorized());
     }
 
