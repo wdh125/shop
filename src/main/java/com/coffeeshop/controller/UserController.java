@@ -24,9 +24,6 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getCurrentUserProfile(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).body("Không xác định được người dùng!");
-        }
         return ResponseEntity.ok(userService.getCurrentUserProfile(userDetails.getUsername()));
     }
 
@@ -34,10 +31,6 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserDetails userDetails, 
                                          @Valid @RequestBody UserProfileUpdateRequestDTO request) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).body("Không xác định được người dùng!");
-        }
-        
         return ResponseEntity.ok(userService.updateUserProfile(userDetails.getUsername(), request));
     }
 
