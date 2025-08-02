@@ -205,4 +205,33 @@ public class NotificationServiceImpl implements NotificationService {
 
         return dto;
     }
+
+    @Override
+    public boolean canAccessUserNotifications(Integer userId, org.springframework.security.core.Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        // Check if user has ADMIN or STAFF role
+        boolean hasAdminRole = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()) || 
+                                     "ROLE_STAFF".equals(authority.getAuthority()));
+        
+        if (hasAdminRole) {
+            return true;
+        }
+
+        // Check if it's the same user
+        try {
+            org.springframework.security.core.userdetails.UserDetails userDetails = 
+                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            
+            // Get the user from database to compare IDs
+            User user = userRepository.findByUsername(username).orElse(null);
+            return user != null && userId.equals(user.getId());
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

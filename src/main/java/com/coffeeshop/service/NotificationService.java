@@ -53,4 +53,9 @@ public interface NotificationService {
      * Helper method to create reservation-related notifications
      */
     void createReservationNotification(User user, Reservation reservation, NotificationType type, String title, String message);
+
+    /**
+     * Check if the authenticated user can access notifications for the given user ID
+     */
+    boolean canAccessUserNotifications(Integer userId, org.springframework.security.core.Authentication authentication);
 }
