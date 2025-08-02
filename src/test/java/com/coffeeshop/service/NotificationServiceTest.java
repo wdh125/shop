@@ -16,6 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import com.coffeeshop.dto.notification.request.NotificationCreateRequestDTO;
 import com.coffeeshop.dto.notification.response.NotificationResponseDTO;
@@ -28,6 +30,7 @@ import com.coffeeshop.repository.OrderRepository;
 import com.coffeeshop.repository.PaymentRepository;
 import com.coffeeshop.repository.ReservationRepository;
 import com.coffeeshop.repository.UserRepository;
+import com.coffeeshop.service.impl.NotificationServiceImpl;
 
 import java.util.List;
 
@@ -50,7 +53,7 @@ class NotificationServiceTest {
     private ReservationRepository reservationRepository;
 
     @InjectMocks
-    private NotificationService notificationService;
+    private NotificationServiceImpl notificationService;
 
     private User testUser;
     private Order testOrder;
@@ -170,5 +173,14 @@ class NotificationServiceTest {
 
         // Assert
         assertEquals(5L, result);
+    }
+
+    @Test
+    void testCanAccessUserNotifications_NullAuthentication() {
+        // Act
+        boolean result = notificationService.canAccessUserNotifications(1, null);
+
+        // Assert
+        assertFalse(result);
     }
 }

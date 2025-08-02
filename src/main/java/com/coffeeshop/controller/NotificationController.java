@@ -41,7 +41,7 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or (#userId == authentication.principal.id)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or @notificationServiceImpl.canAccessUserNotifications(#userId, authentication)")
     public ResponseEntity<NotificationListResponseDTO> getUserNotifications(
             @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,
