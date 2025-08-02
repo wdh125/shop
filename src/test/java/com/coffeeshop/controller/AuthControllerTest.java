@@ -1,5 +1,6 @@
 package com.coffeeshop.controller;
 
+import com.coffeeshop.config.TestSecurityConfig;
 import com.coffeeshop.dto.auth.AuthRequestDTO;
 import com.coffeeshop.dto.auth.AuthResponseDTO;
 import com.coffeeshop.dto.auth.RefreshTokenRequestDTO;
@@ -8,9 +9,7 @@ import com.coffeeshop.dto.auth.RegisterRequestDTO;
 import com.coffeeshop.exception.InvalidCredentialsException;
 import com.coffeeshop.exception.UserAlreadyExistsException;
 import com.coffeeshop.exception.ValidationException;
-import com.coffeeshop.security.JwtUtils;
 import com.coffeeshop.service.AuthService;
-import com.coffeeshop.service.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests REST API endpoints for authentication
  */
 @WebMvcTest(AuthController.class)
+@Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
 class AuthControllerTest {
 
@@ -40,12 +41,6 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
-    
-    @MockBean
-    private JwtUtils jwtUtils;
-    
-    @MockBean
-    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private ObjectMapper objectMapper;
