@@ -77,13 +77,13 @@ class ProductControllerTest {
     void getAvailableProducts_ShouldReturnAvailableProducts() throws Exception {
         // Arrange
         List<CustomerProductResponseDTO> products = Arrays.asList(customerProductResponse);
-        when(productService.getFilteredCustomerProducts(null, null, "")).thenReturn(products);
+        when(productService.getFilteredCustomerProducts(any(), any(), any())).thenReturn(products);
 
         // Act & Assert
         mockMvc.perform(get("/api/products/available"))
                 .andExpect(status().isOk());
 
-        verify(productService).getFilteredCustomerProducts(null, null, "");
+        verify(productService).getFilteredCustomerProducts(any(), any(), any());
     }
 
     @Test

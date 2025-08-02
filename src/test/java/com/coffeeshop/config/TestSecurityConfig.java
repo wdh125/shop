@@ -45,7 +45,11 @@ public class TestSecurityConfig {
             .cors(cors -> cors.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/products/available", "/api/products/category/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/products/available", 
+                    "/api/products/category/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
         
