@@ -256,6 +256,40 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMethodArgumentTypeMismatchException(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, WebRequest request) {
+        
+        logger.warn("Method argument type mismatch: {}", ex.getMessage());
+        
+        String message = "Giá trị không hợp lệ";
+        Map<String, Object> details = new HashMap<>();
+        details.put("parameterName", ex.getName());
+        details.put("rejectedValue", ex.getValue());
+        
+        // Special handling for enum conversion errors
+        if (ex.getRequiredType() != null && ex.getRequiredType().isEnum()) {
+            Class<? extends Enum> enumClass = (Class<? extends Enum>) ex.getRequiredType();
+            String[] validValues = java.util.Arrays.stream(enumClass.getEnumConstants())
+                    .map(Enum::name)
+                    .toArray(String[]::new);
+            message = "Giá trị '" + ex.getValue() + "' không hợp lệ cho tham số '" + ex.getName() + 
+                     "'. Các giá trị hợp lệ: " + String.join(", ", validValues);
+            details.put("validValues", validValues);
+        }
+        
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+            message,
+            "Bad Request",
+            extractPath(request),
+            LocalDateTime.now().format(TIMESTAMP_FORMATTER),
+            400,
+            details
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleGlobalException(
             Exception ex, WebRequest request) {
