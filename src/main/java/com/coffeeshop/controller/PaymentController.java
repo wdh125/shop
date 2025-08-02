@@ -30,7 +30,7 @@ public class PaymentController {
     @PreAuthorize("isAuthenticated()")
     public CustomerPaymentResponseDTO createPayment(@Valid @RequestBody CustomerPaymentRequestDTO request,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
-        return paymentService.createPaymentForCustomer(request);
+        return paymentService.createPaymentForCustomer(request, userDetails.getUsername());
     }
 
     /**

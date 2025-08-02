@@ -33,6 +33,7 @@ public class StatisticsController {
     public RevenueStatisticsResponseDTO getRevenueStatistics(
             @RequestParam("from") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam("to") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        validateDateRange(from, to);
         return statisticsService.getRevenueStatistics(from, to);
     }
 
@@ -40,6 +41,7 @@ public class StatisticsController {
     public OrderStatisticsResponseDTO getOrderStatistics(
             @RequestParam("from") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam("to") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        validateDateRange(from, to);
         return statisticsService.getOrderStatistics(from, to);
     }
 
@@ -51,5 +53,11 @@ public class StatisticsController {
     @GetMapping("/top-products")
     public TopProductsResponseDTO getTopProducts(@RequestParam(value = "limit", defaultValue = "5") @Min(1) int limit) {
         return statisticsService.getTopProducts(limit);
+    }
+
+    private void validateDateRange(LocalDate from, LocalDate to) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("Ngày bắt đầu (from) không được sau ngày kết thúc (to). From: " + from + ", To: " + to);
+        }
     }
 } 

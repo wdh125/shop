@@ -225,8 +225,8 @@ public class PaymentService {
         return toAdminPaymentResponseDTO(payment);
     }
 
-    public CustomerPaymentResponseDTO createPaymentForCustomer(CustomerPaymentRequestDTO request) {
-        Payment payment = createPaymentForCustomerEntity(request);
+    public CustomerPaymentResponseDTO createPaymentForCustomer(CustomerPaymentRequestDTO request, String username) {
+        Payment payment = createPaymentForCustomerEntity(request, username);
         return toCustomerPaymentResponseDTO(payment);
     }
 
@@ -263,17 +263,20 @@ public class PaymentService {
     }
 
     // --- Helper: giữ lại logic cũ cho entity ---
-    public Payment createPaymentForCustomerEntity(CustomerPaymentRequestDTO request) {
-        // Lấy user hiện tại
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+    public Payment createPaymentForCustomerEntity(CustomerPaymentRequestDTO request, String username) {
+        // Validate user exists and get user info
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        
         // Kiểm tra order tồn tại và thuộc về user
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new RuntimeException("Order không tồn tại"));
+        
+        // Security validation: ensure user can only create payments for their own orders
         if (!order.getCustomer().getId().equals(user.getId())) {
-            throw new RuntimeException("Bạn chỉ có thể thanh toán đơn của mình!");
+            throw new RuntimeException("Bạn chỉ có thể thanh toán đơn hàng của chính mình!");
         }
+        
         // Kiểm tra trạng thái đơn
         if (!order.getStatus().isAllowPayment()) {
             throw new RuntimeException("Đơn hàng không ở trạng thái cho phép thanh toán!");
