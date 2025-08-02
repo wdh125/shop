@@ -1,9 +1,18 @@
 package com.coffeeshop.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
+import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
+import com.coffeeshop.dto.shared.OrderItemDTO;
+import com.coffeeshop.entity.*;
+import com.coffeeshop.enums.*;
+import com.coffeeshop.repository.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,299 +20,415 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
-import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
-import com.coffeeshop.dto.shared.OrderItemDTO;
-import com.coffeeshop.entity.Order;
-import com.coffeeshop.entity.Product;
-import com.coffeeshop.entity.TableEntity;
-import com.coffeeshop.entity.User;
-import com.coffeeshop.enums.OrderStatus;
-import com.coffeeshop.repository.OrderRepository;
-import com.coffeeshop.repository.OrderItemRepository;
-import com.coffeeshop.repository.ProductRepository;
-import com.coffeeshop.repository.ReservationRepository;
-import com.coffeeshop.repository.TableRepository;
-import com.coffeeshop.repository.UserRepository;
-
+/**
+ * Unit tests for OrderService
+ * Tests order creation, status updates, and filtering functionality
+ */
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private ProductRepository productRepository;
-
-    @Mock
-    private TableRepository tableRepository;
-
+    
     @Mock
     private OrderItemRepository orderItemRepository;
-
+    
+    @Mock
+    private UserRepository userRepository;
+    
+    @Mock
+    private ProductRepository productRepository;
+    
+    @Mock
+    private TableRepository tableRepository;
+    
     @Mock
     private ReservationRepository reservationRepository;
-
+    
     @Mock
     private SettingService settingService;
-
+    
     @Mock
     private NotificationService notificationService;
-
+    
     @InjectMocks
     private OrderService orderService;
-
+    
     private User testUser;
-    private Order testOrder;
-    private Product testProduct;
     private TableEntity testTable;
-    private CustomerOrderRequestDTO orderRequest;
-    private OrderItemDTO orderItemDTO;
-
+    private Product testProduct;
+    private Order testOrder;
+    private Reservation testReservation;
+    
     @BeforeEach
     void setUp() {
         testUser = new User();
         testUser.setId(1);
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        testUser.setFullName("Test User");
-
-        testProduct = new Product();
-        testProduct.setId(1);
-        testProduct.setName("Americano");
-        testProduct.setPrice(new BigDecimal("50000"));
-        testProduct.setIsAvailable(true);
-
+        testUser.setRole(UserRole.ROLE_CUSTOMER);
+        
         testTable = new TableEntity();
         testTable.setId(1);
-        testTable.setTableNumber("T001");
-
+        testTable.setTableNumber("T01");
+        testTable.setLocation("Main Floor");
+        testTable.setCapacity(4);
+        testTable.setStatus(TableStatus.AVAILABLE);
+        
+        testProduct = new Product();
+        testProduct.setId(1);
+        testProduct.setName("Espresso");
+        testProduct.setPrice(new BigDecimal("50000"));
+        testProduct.setIsAvailable(true);
+        
+        testReservation = new Reservation();
+        testReservation.setId(1);
+        testReservation.setTable(testTable);
+        testReservation.setCustomer(testUser);
+        testReservation.setStatus(ReservationStatus.CONFIRMED);
+        
         testOrder = new Order();
         testOrder.setId(1);
-        testOrder.setOrderNumber("ORD-123456");
+        testOrder.setOrderNumber("ORD-123456789");
+        testOrder.setCustomer(testUser);
+        testOrder.setTable(testTable);
         testOrder.setStatus(OrderStatus.PENDING);
-        testOrder.setTotalAmount(new BigDecimal("100000"));
+        testOrder.setPaymentStatus(PaymentStatus.UNPAID);
+        testOrder.setSubtotal(new BigDecimal("100000"));
+        testOrder.setTaxAmount(new BigDecimal("10000"));
+        testOrder.setTotalAmount(new BigDecimal("110000"));
         testOrder.setCreatedAt(LocalDateTime.now());
-        testOrder.setTable(testTable); // Set the table relationship
-
-        orderItemDTO = new OrderItemDTO();
-        orderItemDTO.setProductId(1);
-        orderItemDTO.setQuantity(2);
-
-        orderRequest = new CustomerOrderRequestDTO();
-        orderRequest.setTableId(1);
-        orderRequest.setItems(Arrays.asList(orderItemDTO));
-        orderRequest.setNote("Extra napkins");
+        testOrder.setUpdatedAt(LocalDateTime.now());
     }
-
+    
     @Test
-    void testGetAllOrders_Success() {
-        // Arrange
-        List<Order> orders = Arrays.asList(testOrder);
-        when(orderRepository.findAll()).thenReturn(orders);
-
-        // Act
-        List<Order> result = orderService.getAllOrders();
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("ORD-123456", result.get(0).getOrderNumber());
-        verify(orderRepository).findAll();
-    }
-
-    @Test
-    void testGetOrderById_Success() {
+    @DisplayName("Get order by ID should return order when exists")
+    void getOrderById_WhenOrderExists_ShouldReturnOrder() {
         // Arrange
         when(orderRepository.findById(1)).thenReturn(Optional.of(testOrder));
-
+        
         // Act
         Order result = orderService.getOrderById(1);
-
+        
         // Assert
-        assertNotNull(result);
-        assertEquals(1, result.getId());
-        assertEquals("ORD-123456", result.getOrderNumber());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1);
+        assertThat(result.getOrderNumber()).isEqualTo("ORD-123456789");
+        
         verify(orderRepository).findById(1);
     }
-
+    
     @Test
-    void testGetOrderById_NotFound() {
+    @DisplayName("Get order by ID should throw exception when order not found")
+    void getOrderById_WhenOrderNotFound_ShouldThrowException() {
         // Arrange
         when(orderRepository.findById(999)).thenReturn(Optional.empty());
-
+        
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.getOrderById(999);
-        });
+        assertThatThrownBy(() -> orderService.getOrderById(999))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Order not found with id: 999");
+        
         verify(orderRepository).findById(999);
     }
-
+    
     @Test
-    void testCreateOrderWithItems_Success() {
+    @DisplayName("Create order with items should create order successfully")
+    void createOrderWithItems_WithValidData_ShouldCreateOrder() {
         // Arrange
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        OrderItemDTO itemDTO = new OrderItemDTO();
+        itemDTO.setProductId(1);
+        itemDTO.setQuantity(2);
+        
+        CustomerOrderRequestDTO request = new CustomerOrderRequestDTO();
+        request.setTableId(1);
+        request.setNote("Test order");
+        request.setItems(Arrays.asList(itemDTO));
+        
         when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
         when(productRepository.findById(1)).thenReturn(Optional.of(testProduct));
-        when(settingService.getTaxRate()).thenReturn(new BigDecimal("0.10")); // 10% tax
+        when(settingService.getTaxRate()).thenReturn(new BigDecimal("0.1"));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
-        when(orderItemRepository.saveAll(any())).thenReturn(Arrays.asList());
-
+        when(orderItemRepository.saveAll(anyList())).thenReturn(Arrays.asList(new OrderItem()));
+        
         // Act
-        CustomerOrderResponseDTO result = orderService.createOrderWithItems(orderRequest, "testuser");
-
+        Order result = orderService.createOrderWithItems(request, testUser);
+        
         // Assert
-        assertNotNull(result);
-        verify(userRepository).findByUsername("testuser");
+        assertThat(result).isNotNull();
+        
         verify(tableRepository).findById(1);
         verify(productRepository).findById(1);
         verify(settingService).getTaxRate();
         verify(orderRepository).save(any(Order.class));
-        verify(orderItemRepository).saveAll(any());
+        verify(orderItemRepository).saveAll(anyList());
+        verify(notificationService).createOrderNotification(
+            eq(testUser), any(Order.class), eq(NotificationType.ORDER_CREATED), 
+            anyString(), anyString());
     }
-
+    
     @Test
-    void testCreateOrderWithItems_UserNotFound() {
+    @DisplayName("Create order with reservation should use reservation's table")
+    void createOrderWithItems_WithReservation_ShouldUseReservationTable() {
         // Arrange
-        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "nonexistent");
-        });
-        verify(userRepository).findByUsername("nonexistent");
-        verify(orderRepository, never()).save(any(Order.class));
-    }
-
-    @Test
-    void testCreateOrderWithItems_TableNotFound() {
-        // Arrange
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(tableRepository.findById(999)).thenReturn(Optional.empty());
-
-        orderRequest.setTableId(999);
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "testuser");
-        });
-        verify(userRepository).findByUsername("testuser");
-        verify(tableRepository).findById(999);
-        verify(orderRepository, never()).save(any(Order.class));
-    }
-
-    @Test
-    void testCreateOrderWithItems_ProductNotFound() {
-        // Arrange
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
-        when(productRepository.findById(1)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "testuser");
-        });
-        verify(userRepository).findByUsername("testuser");
-        verify(tableRepository).findById(1);
-        verify(productRepository).findById(1);
-        verify(orderRepository, never()).save(any(Order.class));
-    }
-
-    @Test
-    void testCreateOrderWithItems_ProductNotAvailable() {
-        // Arrange
-        testProduct.setIsAvailable(false);
+        OrderItemDTO itemDTO = new OrderItemDTO();
+        itemDTO.setProductId(1);
+        itemDTO.setQuantity(1);
         
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
+        CustomerOrderRequestDTO request = new CustomerOrderRequestDTO();
+        request.setReservationId(1);
+        request.setItems(Arrays.asList(itemDTO));
+        
+        when(reservationRepository.findById(1)).thenReturn(Optional.of(testReservation));
+        when(orderRepository.findByReservation_Id(1)).thenReturn(null);
         when(productRepository.findById(1)).thenReturn(Optional.of(testProduct));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "testuser");
-        });
+        when(settingService.getTaxRate()).thenReturn(new BigDecimal("0.1"));
+        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
+        when(orderItemRepository.saveAll(anyList())).thenReturn(Arrays.asList(new OrderItem()));
+        
+        // Act
+        Order result = orderService.createOrderWithItems(request, testUser);
+        
+        // Assert
+        assertThat(result).isNotNull();
+        
+        verify(reservationRepository).findById(1);
+        verify(orderRepository).findByReservation_Id(1);
         verify(productRepository).findById(1);
-        verify(orderRepository, never()).save(any(Order.class));
+        verify(settingService).getTaxRate();
+        verify(orderRepository).save(any(Order.class));
+        verify(orderItemRepository).saveAll(anyList());
     }
-
+    
     @Test
-    void testGetCustomerOrdersByUsername_Success() {
+    @DisplayName("Create order with cancelled reservation should throw exception")
+    void createOrderWithItems_WithCancelledReservation_ShouldThrowException() {
         // Arrange
+        testReservation.setStatus(ReservationStatus.CANCELLED);
+        
+        CustomerOrderRequestDTO request = new CustomerOrderRequestDTO();
+        request.setReservationId(1);
+        request.setItems(Arrays.asList(new OrderItemDTO()));
+        
+        when(reservationRepository.findById(1)).thenReturn(Optional.of(testReservation));
+        
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.createOrderWithItems(request, testUser))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Reservation is cancelled, cannot create order");
+        
+        verify(reservationRepository).findById(1);
+        verifyNoInteractions(orderRepository, productRepository);
+    }
+    
+    @Test
+    @DisplayName("Create order with existing reservation order should throw exception")
+    void createOrderWithItems_WithExistingReservationOrder_ShouldThrowException() {
+        // Arrange
+        CustomerOrderRequestDTO request = new CustomerOrderRequestDTO();
+        request.setReservationId(1);
+        request.setItems(Arrays.asList(new OrderItemDTO()));
+        
+        when(reservationRepository.findById(1)).thenReturn(Optional.of(testReservation));
+        when(orderRepository.findByReservation_Id(1)).thenReturn(testOrder);
+        
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.createOrderWithItems(request, testUser))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("This reservation already has an order");
+        
+        verify(reservationRepository).findById(1);
+        verify(orderRepository).findByReservation_Id(1);
+    }
+    
+    @Test
+    @DisplayName("Create order without table or reservation should throw exception")
+    void createOrderWithItems_WithoutTableOrReservation_ShouldThrowException() {
+        // Arrange
+        CustomerOrderRequestDTO request = new CustomerOrderRequestDTO();
+        request.setItems(Arrays.asList(new OrderItemDTO()));
+        
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.createOrderWithItems(request, testUser))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("TableId or reservationId must be provided");
+        
+        verifyNoInteractions(tableRepository, reservationRepository);
+    }
+    
+    @Test
+    @DisplayName("Update order status should update status and create notification")
+    void updateOrderStatus_WithValidData_ShouldUpdateStatusAndCreateNotification() {
+        // Arrange
+        when(orderRepository.findById(1)).thenReturn(Optional.of(testOrder));
+        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
+        
+        // Act
+        Order result = orderService.updateOrderStatus(1, OrderStatus.PREPARING);
+        
+        // Assert
+        assertThat(result).isNotNull();
+        
+        verify(orderRepository).findById(1);
+        verify(orderRepository).save(argThat(order -> 
+            order.getStatus().equals(OrderStatus.PREPARING)
+        ));
+        verify(notificationService).createOrderNotification(
+            eq(testUser), any(Order.class), eq(NotificationType.ORDER_STATUS_CHANGED), 
+            anyString(), anyString());
+    }
+    
+    @Test
+    @DisplayName("Update payment method should update payment method")
+    void updatePaymentMethod_WithValidData_ShouldUpdatePaymentMethod() {
+        // Arrange
+        when(orderRepository.findById(1)).thenReturn(Optional.of(testOrder));
+        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
+        
+        // Act
+        Order result = orderService.updatePaymentMethod(1, PaymentMethod.CASH);
+        
+        // Assert
+        assertThat(result).isNotNull();
+        
+        verify(orderRepository).findById(1);
+        verify(orderRepository).save(argThat(order -> 
+            order.getPaymentMethod().equals(PaymentMethod.CASH)
+        ));
+    }
+    
+    @Test
+    @DisplayName("Filter orders by status should return filtered orders")
+    void filterOrdersByStatus_WithValidStatus_ShouldReturnFilteredOrders() {
+        // Arrange
+        List<Order> expectedOrders = Arrays.asList(testOrder);
+        when(orderRepository.findByStatus(OrderStatus.PENDING)).thenReturn(expectedOrders);
+        
+        // Act
+        List<Order> result = orderService.filterOrdersByStatus(OrderStatus.PENDING);
+        
+        // Assert
+        assertThat(result).isNotEmpty();
+        assertThat(result.size()).isEqualTo(1);
+        assertThat(result.get(0).getStatus()).isEqualTo(OrderStatus.PENDING);
+        
+        verify(orderRepository).findByStatus(OrderStatus.PENDING);
+    }
+    
+    @Test
+    @DisplayName("Filter orders by table should return orders for specific table")
+    void filterOrdersByTable_WithValidTableId_ShouldReturnFilteredOrders() {
+        // Arrange
+        List<Order> expectedOrders = Arrays.asList(testOrder);
+        when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
+        when(orderRepository.findByTable(testTable)).thenReturn(expectedOrders);
+        
+        // Act
+        List<Order> result = orderService.filterOrdersByTable(1);
+        
+        // Assert
+        assertThat(result).isNotEmpty();
+        assertThat(result.size()).isEqualTo(1);
+        
+        verify(tableRepository).findById(1);
+        verify(orderRepository).findByTable(testTable);
+    }
+    
+    @Test
+    @DisplayName("Filter orders by date range should return orders within range")
+    void filterOrdersByDateRange_WithValidRange_ShouldReturnFilteredOrders() {
+        // Arrange
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(1);
+        List<Order> expectedOrders = Arrays.asList(testOrder);
+        when(orderRepository.findByCreatedAtBetween(start, end)).thenReturn(expectedOrders);
+        
+        // Act
+        List<Order> result = orderService.filterOrdersByDateRange(start, end);
+        
+        // Assert
+        assertThat(result).isNotEmpty();
+        assertThat(result.size()).isEqualTo(1);
+        
+        verify(orderRepository).findByCreatedAtBetween(start, end);
+    }
+    
+    @Test
+    @DisplayName("Get customer orders by username should return orders for user")
+    void getCustomerOrdersByUsername_WithValidUsername_ShouldReturnOrders() {
+        // Arrange
+        List<Order> orders = Arrays.asList(testOrder);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(orderRepository.findByCustomerOrderByCreatedAtDesc(testUser)).thenReturn(Arrays.asList(testOrder));
-
+        when(orderRepository.findByCustomerOrderByCreatedAtDesc(testUser)).thenReturn(orders);
+        when(orderItemRepository.findByOrder_Id(1)).thenReturn(Arrays.asList(new OrderItem()));
+        
         // Act
         List<CustomerOrderResponseDTO> result = orderService.getCustomerOrdersByUsername("testuser");
-
+        
         // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
+        assertThat(result).isNotEmpty();
+        assertThat(result.size()).isEqualTo(1);
+        
         verify(userRepository).findByUsername("testuser");
         verify(orderRepository).findByCustomerOrderByCreatedAtDesc(testUser);
     }
-
+    
     @Test
-    void testGetCustomerOrdersByUsername_UserNotFound() {
+    @DisplayName("Get customer orders with invalid username should throw exception")
+    void getCustomerOrdersByUsername_WithInvalidUsername_ShouldThrowException() {
         // Arrange
-        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
-
+        when(userRepository.findByUsername("invaliduser")).thenReturn(Optional.empty());
+        
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.getCustomerOrdersByUsername("nonexistent");
-        });
-        verify(userRepository).findByUsername("nonexistent");
+        assertThatThrownBy(() -> orderService.getCustomerOrdersByUsername("invaliduser"))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("User not found with username: invaliduser");
+        
+        verify(userRepository).findByUsername("invaliduser");
+        verifyNoInteractions(orderRepository);
     }
-
+    
     @Test
-    void testFindOrderByReservationId_Success() {
+    @DisplayName("Save order should set timestamps correctly")
+    void saveOrder_WithNewOrder_ShouldSetTimestamps() {
         // Arrange
-        when(orderRepository.findByReservation_Id(1)).thenReturn(testOrder);
-
+        Order newOrder = new Order();
+        newOrder.setOrderNumber("NEW-ORDER");
+        when(orderRepository.save(any(Order.class))).thenReturn(newOrder);
+        
         // Act
-        Order result = orderService.findOrderByReservationId(1);
-
+        Order result = orderService.saveOrder(newOrder);
+        
         // Assert
-        assertNotNull(result);
-        assertEquals("ORD-123456", result.getOrderNumber());
-        verify(orderRepository).findByReservation_Id(1);
+        assertThat(result).isNotNull();
+        
+        verify(orderRepository).save(argThat(order -> 
+            order.getCreatedAt() != null && 
+            order.getUpdatedAt() != null
+        ));
     }
-
+    
     @Test
-    void testCreateOrderWithItems_EmptyItems() {
+    @DisplayName("Save existing order should update timestamp only")
+    void saveOrder_WithExistingOrder_ShouldUpdateTimestampOnly() {
         // Arrange
-        orderRequest.setItems(Arrays.asList()); // Empty items list
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "testuser");
-        });
-        verify(orderRepository, never()).save(any(Order.class));
-    }
-
-    @Test
-    void testCreateOrderWithItems_InvalidQuantity() {
-        // Arrange
-        orderItemDTO.setQuantity(0); // Invalid quantity
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(tableRepository.findById(1)).thenReturn(Optional.of(testTable));
-        when(productRepository.findById(1)).thenReturn(Optional.of(testProduct));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            orderService.createOrderWithItems(orderRequest, "testuser");
-        });
-        verify(orderRepository, never()).save(any(Order.class));
+        testOrder.setCreatedAt(LocalDateTime.now().minusHours(1));
+        LocalDateTime originalCreatedAt = testOrder.getCreatedAt();
+        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
+        
+        // Act
+        Order result = orderService.saveOrder(testOrder);
+        
+        // Assert
+        assertThat(result).isNotNull();
+        
+        verify(orderRepository).save(argThat(order -> 
+            order.getCreatedAt().equals(originalCreatedAt) && 
+            order.getUpdatedAt() != null
+        ));
     }
 }
