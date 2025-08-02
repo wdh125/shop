@@ -63,10 +63,10 @@ public class TestDataFactory {
 
     public static Order createTestOrder(User user, OrderStatus status) {
         Order order = new Order();
-        order.setUser(user);
+        order.setCustomer(user);
         order.setStatus(status);
         order.setTotalAmount(BigDecimal.valueOf(100000));
-        order.setOrderNotes("Test order");
+        order.setNotes("Test order");
         order.setCreatedAt(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
         return order;
@@ -74,12 +74,12 @@ public class TestDataFactory {
 
     public static Reservation createTestReservation(User user, TableEntity table) {
         Reservation reservation = new Reservation();
-        reservation.setUser(user);
+        reservation.setCustomer(user);
         reservation.setTable(table);
-        reservation.setReservationTime(LocalDateTime.now().plusHours(2));
+        reservation.setReservationDatetime(LocalDateTime.now().plusHours(2));
         reservation.setPartySize(4);
         reservation.setStatus(ReservationStatus.CONFIRMED);
-        reservation.setSpecialRequests("Test reservation");
+        reservation.setNotes("Test reservation");
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setUpdatedAt(LocalDateTime.now());
         return reservation;
@@ -90,8 +90,7 @@ public class TestDataFactory {
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
         payment.setPaymentMethod(method);
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setTransactionId("TEST_TXN_" + System.currentTimeMillis());
+        payment.setStatus(PaymentProcessStatus.COMPLETED);
         payment.setCreatedAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
         return payment;
