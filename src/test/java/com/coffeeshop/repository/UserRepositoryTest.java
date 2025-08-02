@@ -39,6 +39,7 @@ class UserRepositoryTest {
         testUser.setRole(UserRole.ROLE_CUSTOMER);
         testUser.setIsActive(true);
         testUser.setCreatedAt(LocalDateTime.now());
+        testUser.setUpdatedAt(LocalDateTime.now());
     }
 
     @Test
