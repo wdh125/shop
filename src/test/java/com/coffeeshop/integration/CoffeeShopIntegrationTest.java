@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests end-to-end business flows including user registration, authentication, and ordering
  */
 @SpringBootTest
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 class CoffeeShopIntegrationTest {
@@ -106,6 +106,7 @@ class CoffeeShopIntegrationTest {
         testTable.setLocation("Main Floor");
         testTable.setCapacity(4);
         testTable.setStatus(TableStatus.AVAILABLE);
+        testTable.setIsActive(true);
         testTable.setCreatedAt(LocalDateTime.now());
         testTable.setUpdatedAt(LocalDateTime.now());
         testTable = tableRepository.save(testTable);
@@ -281,6 +282,7 @@ class CoffeeShopIntegrationTest {
         table2.setLocation("Outdoor");
         table2.setCapacity(2);
         table2.setStatus(TableStatus.OCCUPIED);
+        table2.setIsActive(true);
         table2.setCreatedAt(LocalDateTime.now());
         table2.setUpdatedAt(LocalDateTime.now());
 

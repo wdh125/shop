@@ -1,5 +1,6 @@
 package com.coffeeshop.controller;
 
+import com.coffeeshop.config.TestSecurityConfig;
 import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.shared.OrderItemDTO;
@@ -11,8 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,7 +24,6 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests REST API endpoints for order management
  */
 @WebMvcTest(OrderController.class)
+@Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
 class OrderControllerTest {
 
@@ -88,7 +89,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with authenticated user should create order and return 200")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithAuthenticatedUser_ShouldReturn200() throws Exception {
         // Arrange
         when(orderService.createOrderWithItems(any(CustomerOrderRequestDTO.class), eq("testuser")))
@@ -96,7 +96,6 @@ class OrderControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validOrderRequest)))
                 .andExpect(status().isOk())
@@ -122,7 +121,6 @@ class OrderControllerTest {
     void createOrder_WithoutAuthentication_ShouldReturn401() throws Exception {
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validOrderRequest)))
                 .andExpect(status().isUnauthorized());
@@ -132,7 +130,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with invalid request should return 400")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithInvalidRequest_ShouldReturn400() throws Exception {
         // Arrange - Create invalid request (missing required fields)
         CustomerOrderRequestDTO invalidRequest = new CustomerOrderRequestDTO();
@@ -140,7 +137,6 @@ class OrderControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -150,7 +146,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with service exception should return appropriate error status")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithServiceException_ShouldReturnErrorStatus() throws Exception {
         // Arrange
         when(orderService.createOrderWithItems(any(CustomerOrderRequestDTO.class), eq("testuser")))
@@ -158,7 +153,6 @@ class OrderControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validOrderRequest)))
                 .andExpect(status().isInternalServerError());
@@ -168,7 +162,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("GET /api/orders/my-orders with authenticated user should return user orders")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void getMyOrders_WithAuthenticatedUser_ShouldReturnOrders() throws Exception {
         // Arrange
         List<CustomerOrderResponseDTO> orders = Arrays.asList(orderResponse);
@@ -201,7 +194,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("GET /api/orders/my-orders with empty orders should return empty array")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void getMyOrders_WithEmptyOrders_ShouldReturnEmptyArray() throws Exception {
         // Arrange
         when(orderService.getCustomerOrdersByUsername("testuser")).thenReturn(Arrays.asList());
@@ -217,7 +209,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with reservation ID should create order with reservation")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithReservationId_ShouldCreateOrderWithReservation() throws Exception {
         // Arrange
         validOrderRequest.setTableId(null);
@@ -229,7 +220,6 @@ class OrderControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validOrderRequest)))
                 .andExpect(status().isOk())
@@ -240,7 +230,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with multiple items should handle multiple items correctly")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithMultipleItems_ShouldHandleCorrectly() throws Exception {
         // Arrange
         OrderItemDTO item1 = new OrderItemDTO();
@@ -271,7 +260,6 @@ class OrderControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(validOrderRequest)))
                 .andExpect(status().isOk())
@@ -287,7 +275,6 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders without CSRF token should return 403")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithoutCsrfToken_ShouldReturn403() throws Exception {
         // Act & Assert
         mockMvc.perform(post("/api/orders")
@@ -300,11 +287,9 @@ class OrderControllerTest {
 
     @Test
     @DisplayName("POST /api/orders with malformed JSON should return 400")
-    @WithMockUser(username = "testuser", roles = {"CUSTOMER"})
     void createOrder_WithMalformedJson_ShouldReturn400() throws Exception {
         // Act & Assert
         mockMvc.perform(post("/api/orders")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{invalid json"))
                 .andExpect(status().isBadRequest());

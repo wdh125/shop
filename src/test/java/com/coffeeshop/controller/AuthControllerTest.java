@@ -1,5 +1,6 @@
 package com.coffeeshop.controller;
 
+import com.coffeeshop.config.TestSecurityConfig;
 import com.coffeeshop.dto.auth.AuthRequestDTO;
 import com.coffeeshop.dto.auth.AuthResponseDTO;
 import com.coffeeshop.dto.auth.RefreshTokenRequestDTO;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests REST API endpoints for authentication
  */
 @WebMvcTest(AuthController.class)
+@Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
 class AuthControllerTest {
 
