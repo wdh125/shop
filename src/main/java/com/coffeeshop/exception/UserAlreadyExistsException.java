@@ -5,6 +5,8 @@ package com.coffeeshop.exception;
  */
 public class UserAlreadyExistsException extends BusinessLogicException {
     
+    private static final long serialVersionUID = 1L;
+    
     private static final String ERROR_CODE = "USER_ALREADY_EXISTS";
     
     public UserAlreadyExistsException(String message) {

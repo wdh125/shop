@@ -1,8 +1,6 @@
 package com.coffeeshop.service;
 
 import com.coffeeshop.dto.admin.request.AdminProductRequestDTO;
-import com.coffeeshop.dto.admin.response.AdminProductResponseDTO;
-import com.coffeeshop.dto.customer.response.CustomerProductResponseDTO;
 import com.coffeeshop.entity.Category;
 import com.coffeeshop.entity.Product;
 import com.coffeeshop.repository.CategoryRepository;

@@ -271,12 +271,14 @@ public class GlobalExceptionHandler {
         if (ex.getRequiredType() != null && ex.getRequiredType().isEnum()) {
             @SuppressWarnings("unchecked")
             Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) ex.getRequiredType();
-            String[] validValues = java.util.Arrays.stream(enumClass.getEnumConstants())
-                    .map(Enum::name)
-                    .toArray(String[]::new);
-            message = "Giá trị '" + ex.getValue() + "' không hợp lệ cho tham số '" + ex.getName() + 
-                     "'. Các giá trị hợp lệ: " + String.join(", ", validValues);
-            details.put("validValues", validValues);
+            if (enumClass != null && enumClass.getEnumConstants() != null) {
+                String[] validValues = java.util.Arrays.stream(enumClass.getEnumConstants())
+                        .map(Enum::name)
+                        .toArray(String[]::new);
+                message = "Giá trị '" + ex.getValue() + "' không hợp lệ cho tham số '" + ex.getName() + 
+                         "'. Các giá trị hợp lệ: " + String.join(", ", validValues);
+                details.put("validValues", validValues);
+            }
         }
         
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(

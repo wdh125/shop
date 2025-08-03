@@ -8,7 +8,6 @@ import com.coffeeshop.dto.auth.RefreshTokenResponseDTO;
 import com.coffeeshop.dto.auth.RegisterRequestDTO;
 import com.coffeeshop.exception.InvalidCredentialsException;
 import com.coffeeshop.exception.UserAlreadyExistsException;
-import com.coffeeshop.exception.ValidationException;
 import com.coffeeshop.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
