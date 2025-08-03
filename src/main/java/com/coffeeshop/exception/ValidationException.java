@@ -5,6 +5,7 @@ package com.coffeeshop.exception;
  */
 public class ValidationException extends BusinessLogicException {
     
+    private static final long serialVersionUID = 1L;
     private static final String ERROR_CODE = "VALIDATION_ERROR";
     
     public ValidationException(String message) {

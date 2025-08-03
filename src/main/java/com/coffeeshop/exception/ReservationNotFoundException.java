@@ -5,6 +5,7 @@ package com.coffeeshop.exception;
  */
 public class ReservationNotFoundException extends BusinessLogicException {
     
+    private static final long serialVersionUID = 1L;
     private static final String ERROR_CODE = "RESERVATION_NOT_FOUND";
     
     public ReservationNotFoundException(String message) {

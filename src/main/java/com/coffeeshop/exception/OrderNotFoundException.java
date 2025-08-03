@@ -5,6 +5,7 @@ package com.coffeeshop.exception;
  */
 public class OrderNotFoundException extends BusinessLogicException {
     
+    private static final long serialVersionUID = 1L;
     private static final String ERROR_CODE = "ORDER_NOT_FOUND";
     
     public OrderNotFoundException(String message) {

@@ -80,7 +80,6 @@ class JwtAuthenticationIntegrationTest {
                 .andReturn();
 
         // Validate response structure and headers
-        String responseContent = result.getResponse().getContentAsString();
         // The response should contain error information (since login will fail)
         // but the important part is that it reached the controller and processed the request
     }
@@ -90,7 +89,7 @@ class JwtAuthenticationIntegrationTest {
     @WithMockUser(authorities = {"ROLE_ADMIN"})
     void multiStepAuthorizationFlow_AuthenticateThenAccessProtected_ShouldWork() throws Exception {
         // Step 1: Access protected resource with authentication
-        MvcResult step1Result = mockMvc.perform(get("/api/products")
+        mockMvc.perform(get("/api/products")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(result -> {
@@ -98,11 +97,10 @@ class JwtAuthenticationIntegrationTest {
                     if (status == 403) {
                         throw new AssertionError("Expected status to not be 403 Forbidden, but was " + status);
                     }
-                }) // Should not be forbidden (might be 200, 404, 500 depending on data)
-                .andReturn();
+                }); // Should not be forbidden (might be 200, 404, 500 depending on data)
 
         // Step 2: Attempt to create a new product
-        MvcResult step2Result = mockMvc.perform(post("/api/products")
+        mockMvc.perform(post("/api/products")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(adminProductRequest))
                 .accept(MediaType.APPLICATION_JSON))
@@ -112,8 +110,7 @@ class JwtAuthenticationIntegrationTest {
                     if (status == 403) {
                         throw new AssertionError("Expected status to not be 403 Forbidden, but was " + status);
                     }
-                }) // Should not be forbidden due to authorization
-                .andReturn();
+                }); // Should not be forbidden due to authorization
 
         // Validate that we got proper responses (not authorization errors)
         // The actual business logic might fail, but authorization should succeed
@@ -160,7 +157,6 @@ class JwtAuthenticationIntegrationTest {
                 .andReturn();
 
         // Validate response structure
-        String responseContent = loginResult.getResponse().getContentAsString();
         // Response should contain error information (since login will fail)
     }
 
@@ -220,7 +216,7 @@ class JwtAuthenticationIntegrationTest {
     @Test
     @DisplayName("Security headers validation in responses")
     void securityHeadersValidation_InResponses_ShouldBePresent() throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\"}")
                 .accept(MediaType.APPLICATION_JSON))
@@ -230,8 +226,7 @@ class JwtAuthenticationIntegrationTest {
                 .andExpect(header().exists("X-Frame-Options"))
                 .andExpect(header().exists("Cache-Control"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
-                .andExpect(header().string("X-Frame-Options", "DENY"))
-                .andReturn();
+                .andExpect(header().string("X-Frame-Options", "DENY"));
 
         // Validate security headers are consistently applied across endpoints
         mockMvc.perform(get("/api/products") // This will be forbidden but should have headers
@@ -256,7 +251,6 @@ class JwtAuthenticationIntegrationTest {
                 .andReturn();
 
         // Validate that the request was processed (even if business logic fails)
-        String createResponseContent = createResult.getResponse().getContentAsString();
         int createStatusCode = createResult.getResponse().getStatus();
         
         // Should not be an authorization error (401/403)

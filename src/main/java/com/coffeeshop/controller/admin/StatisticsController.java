@@ -31,27 +31,27 @@ public class StatisticsController {
 
     @GetMapping("/revenue")
     public RevenueStatisticsResponseDTO getRevenueStatistics(
-            @RequestParam("from") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam("to") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         validateDateRange(from, to);
         return statisticsService.getRevenueStatistics(from, to);
     }
 
     @GetMapping("/orders")
     public OrderStatisticsResponseDTO getOrderStatistics(
-            @RequestParam("from") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam("to") @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         validateDateRange(from, to);
         return statisticsService.getOrderStatistics(from, to);
     }
 
     @GetMapping("/top-customers")
-    public TopCustomersResponseDTO getTopCustomers(@RequestParam(value = "limit", defaultValue = "5") @Min(1) int limit) {
+    public TopCustomersResponseDTO getTopCustomers(@RequestParam(defaultValue = "5") @Min(1) int limit) {
         return statisticsService.getTopCustomers(limit);
     }
 
     @GetMapping("/top-products")
-    public TopProductsResponseDTO getTopProducts(@RequestParam(value = "limit", defaultValue = "5") @Min(1) int limit) {
+    public TopProductsResponseDTO getTopProducts(@RequestParam(defaultValue = "5") @Min(1) int limit) {
         return statisticsService.getTopProducts(limit);
     }
 
