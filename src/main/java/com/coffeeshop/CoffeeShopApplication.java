@@ -19,7 +19,7 @@ public class CoffeeShopApplication {
 
 	@Bean
 	@Profile("!test")
-	public CommandLineRunner testDatabase(UserRepository userRepository) {
+	CommandLineRunner testDatabase(UserRepository userRepository) {
 		return args -> {
 			System.out.println("📦 Danh sách người dùng từ MySQL:");
 			userRepository.findAll().forEach(user -> {
