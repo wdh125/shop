@@ -52,9 +52,6 @@ class CoffeeShopIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private AuthService authService;
-
-    @Autowired
     private UserRepository userRepository;
     
     @Autowired

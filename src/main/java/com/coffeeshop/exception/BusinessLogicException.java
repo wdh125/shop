@@ -6,6 +6,8 @@ package com.coffeeshop.exception;
  */
 public class BusinessLogicException extends RuntimeException {
     
+    private static final long serialVersionUID = 1L;
+    
     private final String errorCode;
     private final Object rejectedValue;
     

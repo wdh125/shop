@@ -8,7 +8,6 @@ import com.coffeeshop.dto.auth.RefreshTokenResponseDTO;
 import com.coffeeshop.dto.auth.RegisterRequestDTO;
 import com.coffeeshop.exception.InvalidCredentialsException;
 import com.coffeeshop.exception.UserAlreadyExistsException;
-import com.coffeeshop.exception.ValidationException;
 import com.coffeeshop.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -39,7 +38,7 @@ class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
     @Autowired

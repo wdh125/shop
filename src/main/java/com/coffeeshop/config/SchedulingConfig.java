@@ -15,7 +15,7 @@ public class SchedulingConfig {
      * @return một instance của ScheduledExecutorService.
      */
     @Bean
-    public ScheduledExecutorService taskScheduler() {
+    ScheduledExecutorService taskScheduler() {
         return Executors.newSingleThreadScheduledExecutor();
     }
 } 

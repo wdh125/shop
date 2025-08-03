@@ -198,7 +198,7 @@ class TableServiceTest {
         when(tableRepository.save(any(TableEntity.class))).thenReturn(existingTable);
         
         // Act
-        TableEntity result = tableService.saveTable(existingTable);
+        tableService.saveTable(existingTable);
         
         // Assert
         verify(tableRepository).findById(1);
