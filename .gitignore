@@ -27,3 +27,7 @@ src/main/java/com/coffeeshop/database/
 
 # Others
 *.class
+
+# Front End
+coffee-shop-vite/
+coffee-shop-vue/
