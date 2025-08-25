@@ -66,6 +66,11 @@ public interface ProductService {
     AdminProductResponseDTO getAdminProductById(Integer id);
 
     /**
+     * Get customer product by ID
+     */
+    CustomerProductResponseDTO getCustomerProductById(Integer id);
+
+    /**
      * Create new product
      */
     AdminProductResponseDTO createProduct(AdminProductRequestDTO request);

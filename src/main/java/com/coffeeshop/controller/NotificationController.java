@@ -32,7 +32,7 @@ public class NotificationController {
     private JwtUtils jwtUtils;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<NotificationResponseDTO> createNotification(
             @Valid @RequestBody NotificationCreateRequestDTO requestDTO) {
         
@@ -41,7 +41,7 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or @notificationServiceImpl.canAccessUserNotifications(#userId, authentication)")
+    @PreAuthorize("hasRole('ADMIN') or @notificationServiceImpl.canAccessUserNotifications(#userId, authentication)")
     public ResponseEntity<NotificationListResponseDTO> getUserNotifications(
             @PathVariable Integer userId,
             @RequestParam(defaultValue = "0") int page,

@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Size;
 
 public class ReservationRequestDTO {
@@ -12,7 +11,6 @@ public class ReservationRequestDTO {
     private Integer tableId;
     
     @NotNull(message = "Thời gian đặt bàn không được để trống")
-    @Future(message = "Thời gian đặt bàn phải trong tương lai")
     private LocalDateTime reservationDatetime;
     
     @NotNull(message = "Số lượng người không được để trống")

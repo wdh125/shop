@@ -6,6 +6,7 @@ public class OverviewStatisticsResponseDTO {
     private int totalCustomers;
     private int totalProducts;
     private int totalCategories;
+    private int newCustomers; // Khách hàng mới trong tháng hiện tại
 
     // Constructor mặc định
     public OverviewStatisticsResponseDTO() {}
@@ -20,4 +21,10 @@ public class OverviewStatisticsResponseDTO {
     public void setTotalProducts(int totalProducts) { this.totalProducts = totalProducts; }
     public int getTotalCategories() { return totalCategories; }
     public void setTotalCategories(int totalCategories) { this.totalCategories = totalCategories; }
+    public int getNewCustomers() { return newCustomers; }
+    public void setNewCustomers(int newCustomers) { this.newCustomers = newCustomers; }
+    
+    // Alias for totalOrders to maintain frontend compatibility
+    public int getOrderCount() { return totalOrders; }
+    public void setOrderCount(int orderCount) { this.totalOrders = orderCount; }
 } 

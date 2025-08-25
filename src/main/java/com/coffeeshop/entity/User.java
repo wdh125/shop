@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+// Entity đại diện cho bảng users trong database
 @Entity
 @Table(name = "users")
 public class User {
@@ -21,35 +22,35 @@ public class User {
 	private Integer id;
 
 	@Column(length = 50, nullable = false, unique = true)
-	private String username;
+	private String username; // Tên đăng nhập duy nhất
 
 	@Column(length = 100, nullable = false, unique = true)
-	private String email;
+	private String email; // Email duy nhất
 
 	@Column(length = 255, nullable = false)
-	private String password;
+	private String password; // Mật khẩu đã mã hóa
 
 	@Column(length = 100, nullable = false)
-	private String fullName;
+	private String fullName; // Họ và tên đầy đủ
 
 	@Column(length = 15)
-	private String phone;
+	private String phone; // Số điện thoại
 
 	@Column(length = 255)
-	private String profileImage;
+	private String profileImage; // Đường dẫn ảnh đại diện
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20, nullable = false)
-	private UserRole role = UserRole.ROLE_CUSTOMER;
+	private UserRole role = UserRole.ROLE_CUSTOMER; // Vai trò người dùng
 
 	@Column(nullable = false)
-	private Boolean isActive = true;
+	private Boolean isActive = true; // Trạng thái hoạt động
 
 	@Column(nullable = false)
-	private LocalDateTime createdAt;
+	private LocalDateTime createdAt; // Thời gian tạo
 
 	@Column(nullable = false)
-	private LocalDateTime updatedAt;
+	private LocalDateTime updatedAt; // Thời gian cập nhật cuối
 
 	public Integer getId() {
 		return id;

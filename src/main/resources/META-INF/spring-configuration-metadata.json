@@ -1,0 +1,94 @@
+{
+  "properties": [
+    {
+      "name": "scheduler.table.available.delay-minutes",
+      "type": "java.lang.Integer",
+      "description": "Delay in minutes for table availability"
+    },
+    {
+      "name": "scheduler.reservation.block-before-minutes", 
+      "type": "java.lang.Integer",
+      "description": "Minutes before blocking reservation"
+    },
+    {
+      "name": "scheduler.reservation.cancel-before-minutes",
+      "type": "java.lang.Integer", 
+      "description": "Minutes before allowing cancellation"
+    },
+    {
+      "name": "scheduler.order.cancel-after-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes after which order can be cancelled"
+    },
+    {
+      "name": "scheduler.order.preparing-before-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes before order starts preparing"
+    },
+    {
+      "name": "scheduler.order.pending-to-cancelled-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes for pending order to be cancelled"
+    },
+    {
+      "name": "scheduler.order.preparing-to-ready-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes for order to be ready"
+    },
+    {
+      "name": "scheduler.order.served-to-completed-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes for served order to be completed"
+    },
+    {
+      "name": "scheduler.reservation.auto-reserve-before-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minutes before auto-reserving"
+    },
+    {
+      "name": "scheduler.reservation.grace-period-minutes",
+      "type": "java.lang.Integer",
+      "description": "Grace period for reservations in minutes"
+    },
+    {
+      "name": "scheduler.reservation.min-gap-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minimum gap between reservations in minutes"
+    },
+    {
+      "name": "scheduler.reservation.min-advance-minutes",
+      "type": "java.lang.Integer",
+      "description": "Minimum advance booking time in minutes"
+    },
+    {
+      "name": "scheduler.opening-time",
+      "type": "java.lang.String",
+      "description": "Shop opening time"
+    },
+    {
+      "name": "scheduler.closing-time",
+      "type": "java.lang.String", 
+      "description": "Shop closing time"
+    },
+    {
+      "name": "scheduler.reservation.duration-minutes",
+      "type": "java.lang.Integer",
+      "description": "Default reservation duration in minutes"
+    },
+    {
+      "name": "scheduler.reservation.buffer-after-minutes",
+      "type": "java.lang.Integer",
+      "description": "Buffer time after reservation in minutes"
+    },
+    {
+      "name": "app.jwtSecret",
+      "type": "java.lang.String",
+      "description": "JWT secret key for signing tokens"
+    },
+    {
+      "name": "app.jwtExpirationMs",
+      "type": "java.lang.Integer",
+      "description": "JWT token expiration time in milliseconds"
+    }
+  ]
+}

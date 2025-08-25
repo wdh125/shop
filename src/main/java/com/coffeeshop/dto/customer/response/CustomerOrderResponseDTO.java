@@ -14,6 +14,9 @@ public class CustomerOrderResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderItemInfo> items;
+    private Double subtotal;
+    private Double taxAmount;
+    private Double totalAmount;
     // ... các trường khác nếu cần
     // getter/setter
     public Integer getId() { return id; }
@@ -36,6 +39,12 @@ public class CustomerOrderResponseDTO {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public List<OrderItemInfo> getItems() { return items; }
     public void setItems(List<OrderItemInfo> items) { this.items = items; }
+    public Double getSubtotal() { return subtotal; }
+    public void setSubtotal(Double subtotal) { this.subtotal = subtotal; }
+    public Double getTaxAmount() { return taxAmount; }
+    public void setTaxAmount(Double taxAmount) { this.taxAmount = taxAmount; }
+    public Double getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(Double totalAmount) { this.totalAmount = totalAmount; }
     // Inner class getter/setter
     public static class TableInfo {
         private Integer id;

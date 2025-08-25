@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import com.coffeeshop.entity.RefreshToken;
 
+// Service implementation xử lý xác thực người dùng
 @Service
 public class AuthServiceImpl implements AuthService {
     
@@ -38,19 +39,23 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO login(AuthRequestDTO request) {
+        // Tìm user theo username
         User user = userRepository.findByUsername(request.getUsername())
                 .orElse(null);
         
+        // Kiểm tra mật khẩu và trả về lỗi nếu không đúng
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             logger.warn("Login attempt failed for username: {}", request.getUsername());
             throw new InvalidCredentialsException("Sai tên đăng nhập hoặc mật khẩu!", request.getUsername());
         }
         
+        // Tạo access token và refresh token
         String accessToken = jwtUtils.generateJwtToken(user.getUsername());
         String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
         
         logger.info("User {} logged in successfully", user.getUsername());
         
+        // Tạo response DTO
         AuthResponseDTO response = new AuthResponseDTO();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken);
@@ -62,8 +67,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public RefreshTokenResponseDTO refreshToken(RefreshTokenRequestDTO request) {
+        // Tìm refresh token trong database
         var tokenOpt = refreshTokenService.findByToken(request.getRefreshToken());
         
+        // Kiểm tra tính hợp lệ và tạo access token mới
         if (tokenOpt.isPresent() && refreshTokenService.isValid(tokenOpt.get())) {
             String accessToken = jwtUtils.generateJwtToken(tokenOpt.get().getUser().getUsername());
             RefreshTokenResponseDTO response = new RefreshTokenResponseDTO();
@@ -76,6 +83,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String logout(String refreshToken) {
+        // Tìm refresh token để vô hiệu hóa
         var tokenOpt = refreshTokenService.findByToken(refreshToken);
         
         if (tokenOpt.isPresent()) {
@@ -84,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
             
             logger.info("User {} logging out", user.getUsername());
             
-            // Chỉ cần revoke token này (set is_revoked = true)
+            // Vô hiệu hóa refresh token
             refreshTokenService.revokeToken(token);
             
             return "Đăng xuất thành công!";
@@ -95,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String register(RegisterRequestDTO request) {
-        // Validate input
+        // Validate dữ liệu đầu vào
         if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
             throw new ValidationException("Username không được để trống!");
         }
@@ -109,24 +117,24 @@ public class AuthServiceImpl implements AuthService {
             throw new ValidationException("Họ tên không được để trống!");
         }
 
-        // Check if username already exists
+        // Kiểm tra username đã tồn tại
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new UserAlreadyExistsException("Username đã tồn tại!", request.getUsername());
         }
 
-        // Check if email already exists
+        // Kiểm tra email đã tồn tại
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email đã được sử dụng!", request.getEmail());
         }
 
-        // Create new user
+        // Tạo user mới với thông tin đã validate
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
         user.setPhone(request.getPhone());
-        user.setRole(UserRole.ROLE_CUSTOMER); // Default role for registration
+        user.setRole(UserRole.ROLE_CUSTOMER); // Vai trò mặc định cho đăng ký
         user.setIsActive(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

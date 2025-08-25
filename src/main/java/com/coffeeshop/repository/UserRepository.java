@@ -6,11 +6,12 @@ import com.coffeeshop.entity.User;
 
 import java.util.Optional;
 
+// Repository interface cho entity User
 public interface UserRepository extends JpaRepository<User, Integer> {
-	Optional<User> findByUsername(String username);
+	Optional<User> findByUsername(String username); // Tìm user theo username
 
-	User findByEmail(String email);
+	User findByEmail(String email); // Tìm user theo email
 
-	boolean existsByUsername(String username);
-	boolean existsByEmail(String email);
+	boolean existsByUsername(String username); // Kiểm tra username đã tồn tại
+	boolean existsByEmail(String email); // Kiểm tra email đã tồn tại
 }

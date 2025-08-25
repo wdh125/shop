@@ -1,6 +1,7 @@
 package com.coffeeshop.enums;
 
 public enum PaymentProcessStatus {
-    COMPLETED,
-    FAILED
+    PENDING,    // Chờ xác nhận (cho thanh toán tiền mặt)
+    COMPLETED,  // Hoàn thành
+    FAILED      // Thất bại
 }

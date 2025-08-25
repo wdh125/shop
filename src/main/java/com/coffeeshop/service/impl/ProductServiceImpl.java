@@ -19,6 +19,7 @@ import com.coffeeshop.controller.ProductController.ReorderRequest;
 import com.coffeeshop.service.ProductService;
 import java.time.LocalDateTime;
 
+// Service implementation xử lý logic nghiệp vụ sản phẩm
 @Service
 public class ProductServiceImpl implements ProductService {
 	@Autowired
@@ -49,6 +50,11 @@ public class ProductServiceImpl implements ProductService {
 		if (product.getPrice() == null || product.getPrice().doubleValue() <= 0) {
 			throw new IllegalArgumentException("Giá sản phẩm phải lớn hơn 0!");
 		}
+		
+		// Validate thời gian chế biến > 0 nếu có
+		if (product.getPreparationTime() != null && product.getPreparationTime() <= 0) {
+			throw new IllegalArgumentException("Thời gian chế biến phải lớn hơn 0!");
+		}
 		if (product.getId() == null) {
 			product.setCreatedAt(LocalDateTime.now());
 		} else if (product.getCreatedAt() == null) {
@@ -63,27 +69,55 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Product saveProductFromDTO(AdminProductRequestDTO dto, Integer id) {
 		Product product = id != null ? getProductById(id).orElse(new Product()) : new Product();
-		product.setName(dto.getName());
-		product.setDescription(dto.getDescription());
-		product.setPrice(dto.getPrice());
-		product.setImageUrl(dto.getImageUrl());
-		product.setIsAvailable(dto.getIsAvailable());
-		product.setPreparationTime(dto.getPreparationTime());
-		product.setDisplayOrder(dto.getDisplayOrder());
 		
-		// Set category if categoryId is provided
-		if (dto.getCategoryId() != null) {
-			Category category = categoryRepository.findById(dto.getCategoryId())
-				.orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + dto.getCategoryId()));
-			product.setCategory(category);
+		// Cập nhật các trường bắt buộc từ DTO
+		product.setName(dto.getName());
+		product.setPrice(dto.getPrice());
+		
+		// Xử lý isAvailable: nếu là update và DTO null thì giữ nguyên giá trị cũ
+		if (dto.getIsAvailable() != null) {
+			product.setIsAvailable(dto.getIsAvailable());
+		} else if (id == null) {
+			// Nếu là tạo mới và không có giá trị thì set default
+			product.setIsAvailable(true);
 		}
+		
+		// Các trường có thể null - cập nhật từ DTO, nếu DTO null thì giữ nguyên giá trị cũ
+		if (dto.getDescription() != null) {
+			product.setDescription(dto.getDescription());
+		}
+		// Nếu update sản phẩm và có image mới thì cập nhật, không thì giữ nguyên
+		if (dto.getImageUrl() != null) {
+			product.setImageUrl(dto.getImageUrl());
+		}
+		if (dto.getPreparationTime() != null) {
+			product.setPreparationTime(dto.getPreparationTime());
+		}
+		if (dto.getDisplayOrder() != null) {
+			product.setDisplayOrder(dto.getDisplayOrder());
+		}
+		
+		// Bắt buộc phải có category
+		if (dto.getCategoryId() == null) {
+			throw new IllegalArgumentException("Category ID không được để trống! Mọi sản phẩm đều phải thuộc về một danh mục.");
+		}
+		
+		Category category = categoryRepository.findById(dto.getCategoryId())
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục với ID: " + dto.getCategoryId()));
+		product.setCategory(category);
 		
 		return saveProduct(product);
 	}
 
 	@Override
 	public void deleteProduct(Integer id) {
-		productRepository.deleteById(id);
+		Optional<Product> productOpt = productRepository.findById(id);
+		if (productOpt.isPresent()) {
+			Product product = productOpt.get();
+			product.setIsAvailable(false);
+			product.setUpdatedAt(LocalDateTime.now());
+			productRepository.save(product);
+		}
 	}
 
 	@Override
@@ -188,6 +222,14 @@ public class ProductServiceImpl implements ProductService {
 		return getProductById(id)
 			.map(AdminProductResponseDTO::fromEntity)
 			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm!"));
+	}
+
+	@Override
+	public CustomerProductResponseDTO getCustomerProductById(Integer id) {
+		return getProductById(id)
+			.filter(p -> Boolean.TRUE.equals(p.getIsAvailable()))
+			.map(CustomerProductResponseDTO::fromEntity)
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm hoặc sản phẩm không khả dụng!"));
 	}
 
 	@Override

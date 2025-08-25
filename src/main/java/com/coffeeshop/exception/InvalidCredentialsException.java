@@ -1,8 +1,6 @@
 package com.coffeeshop.exception;
 
-/**
- * Exception thrown when authentication fails due to invalid credentials.
- */
+// Exception được throw khi xác thực thất bại do thông tin đăng nhập không đúng
 public class InvalidCredentialsException extends BusinessLogicException {
     
     private static final long serialVersionUID = 1L;

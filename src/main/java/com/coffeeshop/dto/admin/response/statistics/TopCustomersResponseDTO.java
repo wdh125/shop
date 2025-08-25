@@ -9,6 +9,8 @@ public class TopCustomersResponseDTO {
         private String email;
         private double totalSpent;
         private int totalOrders;
+        private String description; // Mô tả khách hàng
+        private String profileImage; // Ảnh đại diện khách hàng
 
         // Constructor mặc định
         public TopCustomerInfo() {}
@@ -23,6 +25,14 @@ public class TopCustomersResponseDTO {
         public void setTotalSpent(double totalSpent) { this.totalSpent = totalSpent; }
         public int getTotalOrders() { return totalOrders; }
         public void setTotalOrders(int totalOrders) { this.totalOrders = totalOrders; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public String getProfileImage() { return profileImage; }
+        public void setProfileImage(String profileImage) { this.profileImage = profileImage; }
+        
+        // Alias for totalOrders to maintain frontend compatibility
+        public int getOrderCount() { return totalOrders; }
+        public void setOrderCount(int orderCount) { this.totalOrders = orderCount; }
     }
     private List<TopCustomerInfo> topCustomers;
 

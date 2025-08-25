@@ -90,4 +90,9 @@ public interface CategoryService {
      * Reorder categories and return DTOs
      */
     List<AdminCategoryResponseDTO> reorderCategoriesAndReturnDTOs(List<Map<String, Integer>> reorderList);
+
+    /**
+     * Get active customer category DTO by ID
+     */
+    CustomerCategoryResponseDTO getActiveCustomerCategoryDTOById(Integer id);
 }

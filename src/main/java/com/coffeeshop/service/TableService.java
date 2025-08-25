@@ -57,4 +57,9 @@ public interface TableService {
      * Update existing table
      */
     AdminTableResponseDTO updateTable(Integer id, AdminTableRequestDTO request);
+
+    /**
+     * Toggle table active status
+     */
+    AdminTableResponseDTO toggleTableActive(Integer id);
 }

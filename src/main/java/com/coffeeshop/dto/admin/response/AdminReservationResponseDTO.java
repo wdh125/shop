@@ -12,6 +12,7 @@ public class AdminReservationResponseDTO {
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer orderId; // ID của đơn hàng liên kết (nếu có)
 
     // Constructor mặc định
     public AdminReservationResponseDTO() {}
@@ -34,6 +35,8 @@ public class AdminReservationResponseDTO {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Integer getOrderId() { return orderId; }
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
 
     // Inner class CustomerInfo
     public static class CustomerInfo {

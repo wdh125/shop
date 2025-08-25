@@ -3,17 +3,14 @@ package com.coffeeshop.dto.auth;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 
-/**
- * DTO cho request đăng nhập
- * Dùng cho API login
- */
+// DTO cho request đăng nhập
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthRequestDTO {
     @NotBlank(message = "Username không được để trống")
-    private String username;     // Tên đăng nhập
+    private String username; // Tên đăng nhập
     
     @NotBlank(message = "Password không được để trống")
-    private String password;     // Mật khẩu
+    private String password; // Mật khẩu
 
     // Constructor mặc định
     public AuthRequestDTO() {}

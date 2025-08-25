@@ -10,11 +10,17 @@ public class AdminCategoryResponseDTO {
     private Integer displayOrder;
     private Integer productCount;
     private List<AdminProductResponseDTO> products;
+    private String imageUrl; // THÊM FIELD NÀY!
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
 
     public AdminCategoryResponseDTO() {}
-    public AdminCategoryResponseDTO(Integer id, String name, String description, Boolean isActive, Integer displayOrder, Integer productCount, List<AdminProductResponseDTO> products, java.time.LocalDateTime createdAt, java.time.LocalDateTime updatedAt) {
+    public AdminCategoryResponseDTO(
+        Integer id, String name, String description, Boolean isActive,
+        Integer displayOrder, Integer productCount, List<AdminProductResponseDTO> products,
+        String imageUrl, // THÊM FIELD NÀY!
+        java.time.LocalDateTime createdAt, java.time.LocalDateTime updatedAt
+    ) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -22,6 +28,7 @@ public class AdminCategoryResponseDTO {
         this.displayOrder = displayOrder;
         this.productCount = productCount;
         this.products = products;
+        this.imageUrl = imageUrl; // THÊM FIELD NÀY!
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -39,10 +46,13 @@ public class AdminCategoryResponseDTO {
     public void setProductCount(Integer productCount) { this.productCount = productCount; }
     public List<AdminProductResponseDTO> getProducts() { return products; }
     public void setProducts(List<AdminProductResponseDTO> products) { this.products = products; }
+    public String getImageUrl() { return imageUrl; } // THÊM GETTER
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; } // THÊM SETTER
     public java.time.LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(java.time.LocalDateTime createdAt) { this.createdAt = createdAt; }
     public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(java.time.LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
     public static AdminCategoryResponseDTO fromEntity(com.coffeeshop.entity.Category c, List<AdminProductResponseDTO> products) {
         return new AdminCategoryResponseDTO(
             c.getId(),
@@ -52,8 +62,9 @@ public class AdminCategoryResponseDTO {
             c.getDisplayOrder(),
             products != null ? products.size() : 0,
             products,
+            c.getImageUrl(), // THÊM TRUYỀN IMAGE!
             c.getCreatedAt(),
             c.getUpdatedAt()
         );
     }
-} 
+}

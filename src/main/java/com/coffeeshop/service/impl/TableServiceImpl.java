@@ -14,6 +14,7 @@ import com.coffeeshop.dto.admin.response.AdminTableResponseDTO;
 import com.coffeeshop.dto.admin.request.AdminTableRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerTableResponseDTO;
 import com.coffeeshop.service.TableService;
+import com.coffeeshop.enums.TableStatus;
 
 @Service
 public class TableServiceImpl implements TableService {
@@ -46,7 +47,13 @@ public class TableServiceImpl implements TableService {
 
 	@Override
 	public void deleteTable(Integer id) {
-		tableRepository.deleteById(id);
+		Optional<TableEntity> tableOpt = tableRepository.findById(id);
+		if (tableOpt.isPresent()) {
+			TableEntity table = tableOpt.get();
+			table.setIsActive(false);
+			table.setUpdatedAt(LocalDateTime.now());
+			tableRepository.save(table);
+		}
 	}
 
 	@Override
@@ -77,8 +84,8 @@ public class TableServiceImpl implements TableService {
 		table.setTableNumber(request.getTableNumber());
 		table.setCapacity(request.getCapacity());
 		table.setLocation(request.getLocation());
-		table.setStatus(request.getStatus());
-		table.setIsActive(request.getIsActive());
+		table.setStatus(request.getStatus() != null ? request.getStatus() : TableStatus.AVAILABLE);
+		table.setIsActive(true); // Luôn active khi tạo mới
 		return toAdminTableResponseDTO(saveTable(table));
 	}
 
@@ -91,6 +98,14 @@ public class TableServiceImpl implements TableService {
 		table.setLocation(request.getLocation());
 		table.setStatus(request.getStatus());
 		table.setIsActive(request.getIsActive());
+		return toAdminTableResponseDTO(saveTable(table));
+	}
+
+	@Override
+	public AdminTableResponseDTO toggleTableActive(Integer id) {
+		TableEntity table = getTableById(id)
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn!"));
+		table.setIsActive(!table.getIsActive());
 		return toAdminTableResponseDTO(saveTable(table));
 	}
 

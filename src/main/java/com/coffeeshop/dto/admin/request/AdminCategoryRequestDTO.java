@@ -1,6 +1,9 @@
 package com.coffeeshop.dto.admin.request;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class AdminCategoryRequestDTO {
+    @NotBlank(message = "Tên danh mục không được để trống")
     private String name;
     private String description;
     private String imageUrl;

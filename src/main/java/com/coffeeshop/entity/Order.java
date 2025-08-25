@@ -19,6 +19,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+// Entity đại diện cho bảng orders trong database
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -28,54 +29,54 @@ public class Order {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "customer_id", nullable = false)
-	private User customer;
+	private User customer; // Khách hàng đặt hàng
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "table_id", nullable = false)
-	private TableEntity table;
+	private TableEntity table; // Bàn được đặt
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "reservation_id")
-	private Reservation reservation;
+	private Reservation reservation; // Đặt bàn liên quan (nếu có)
 
 	@Column(nullable = false, length = 20, unique = true)
-	private String orderNumber;
+	private String orderNumber; // Mã đơn hàng duy nhất
 
 	@Column(name = "subtotal", nullable = false)
-	private java.math.BigDecimal subtotal;
+	private java.math.BigDecimal subtotal; // Tổng tiền hàng
 
 	@Column(name = "tax_amount")
-	private java.math.BigDecimal taxAmount;
+	private java.math.BigDecimal taxAmount; // Thuế VAT
 
 	@Column(name = "total_amount", nullable = false)
-	private java.math.BigDecimal totalAmount;
+	private java.math.BigDecimal totalAmount; // Tổng tiền thanh toán
 
 	@Column(length = 255, unique = true)
-	private String qrCodePayment;
+	private String qrCodePayment; // Mã QR thanh toán
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
-	private OrderStatus status = OrderStatus.PENDING;
+	private OrderStatus status = OrderStatus.PENDING; // Trạng thái đơn hàng
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 10)
-	private com.coffeeshop.enums.PaymentStatus paymentStatus = com.coffeeshop.enums.PaymentStatus.UNPAID;
+	private com.coffeeshop.enums.PaymentStatus paymentStatus = com.coffeeshop.enums.PaymentStatus.UNPAID; // Trạng thái thanh toán
 
 	@Enumerated(EnumType.STRING)
 	@Column(length = 20)
-	private PaymentMethod paymentMethod;
+	private PaymentMethod paymentMethod; // Phương thức thanh toán
 
 	@Column(columnDefinition = "TEXT")
-	private String notes;
+	private String notes; // Ghi chú đơn hàng
 
 	@OneToMany(mappedBy = "order")
-	private List<OrderItem> items;
+	private List<OrderItem> items; // Danh sách sản phẩm trong đơn
 
 	@Column(nullable = false)
-	private LocalDateTime createdAt;
+	private LocalDateTime createdAt; // Thời gian tạo
 
 	@Column(nullable = false)
-	private LocalDateTime updatedAt;
+	private LocalDateTime updatedAt; // Thời gian cập nhật cuối
 
 	public Integer getId() {
 		return id;
@@ -165,6 +166,7 @@ public class Order {
 	}
 
 	public List<OrderItem> getItems() { return items; }
+	public void setItems(List<OrderItem> items) { this.items = items; }
 
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
@@ -180,5 +182,13 @@ public class Order {
 
 	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
+	}
+
+	// --- Thêm alias cho chuẩn hóa code (giúp service dùng getOrderItems) ---
+	public List<OrderItem> getOrderItems() {
+		return getItems();
+	}
+	public void setOrderItems(List<OrderItem> orderItems) {
+		setItems(orderItems);
 	}
 }

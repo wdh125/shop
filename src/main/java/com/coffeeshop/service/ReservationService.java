@@ -5,7 +5,10 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
+import java.time.LocalDate;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -68,14 +71,19 @@ public class ReservationService {
 
 		// Create notification for new reservation
 		if (isNew) {
-			notificationService.createReservationNotification(
-				reservation.getCustomer(),
-				savedReservation,
-				NotificationType.RESERVATION_CONFIRMED,
-				"Đặt bàn mới được tạo",
-				"Đặt bàn của bạn tại bàn " + reservation.getTable().getTableNumber() + 
-				" vào lúc " + reservation.getReservationDatetime() + " đã được tạo thành công"
-			);
+			try {
+				notificationService.createReservationNotification(
+					reservation.getCustomer(),
+					savedReservation,
+					NotificationType.RESERVATION_CONFIRMED,
+					"Đặt bàn mới được tạo",
+					"Đặt bàn của bạn tại bàn " + reservation.getTable().getTableNumber() + 
+					" vào lúc " + reservation.getReservationDatetime() + " đã được tạo thành công"
+				);
+			} catch (Exception e) {
+				System.err.println("Failed to create notification: " + e.getMessage());
+				// Don't fail the reservation creation if notification fails
+			}
 		}
 
 		return savedReservation;
@@ -172,6 +180,60 @@ public class ReservationService {
 			.toList();
 	}
 
+	public List<AdminReservationResponseDTO> getAllAdminReservationDTOs(String status, String fromDate, String toDate, Integer partySize, String search) {
+		List<Reservation> reservations = getAllReservations();
+		
+		// Filter by status
+		if (status != null && !status.trim().isEmpty()) {
+			try {
+				ReservationStatus statusEnum = ReservationStatus.valueOf(status);
+				reservations = reservations.stream()
+					.filter(r -> r.getStatus() == statusEnum)
+					.toList();
+			} catch (IllegalArgumentException e) {
+				// Invalid status, return empty list
+				return new ArrayList<>();
+			}
+		}
+		
+		// Filter by date range
+		if (fromDate != null && !fromDate.trim().isEmpty()) {
+			LocalDate from = LocalDate.parse(fromDate);
+			reservations = reservations.stream()
+				.filter(r -> r.getReservationDatetime().toLocalDate().isAfter(from.minusDays(1)))
+				.toList();
+		}
+		
+		if (toDate != null && !toDate.trim().isEmpty()) {
+			LocalDate to = LocalDate.parse(toDate);
+			reservations = reservations.stream()
+				.filter(r -> r.getReservationDatetime().toLocalDate().isBefore(to.plusDays(1)))
+				.toList();
+		}
+		
+		// Filter by party size
+		if (partySize != null) {
+			reservations = reservations.stream()
+				.filter(r -> r.getPartySize().equals(partySize))
+				.toList();
+		}
+		
+		// Filter by search (customer name)
+		if (search != null && !search.trim().isEmpty()) {
+			String searchLower = search.toLowerCase();
+			reservations = reservations.stream()
+				.filter(r -> {
+					String customerName = r.getCustomer().getUsername() + " " + r.getCustomer().getFullName();
+					return customerName.toLowerCase().contains(searchLower);
+				})
+				.toList();
+		}
+		
+		return reservations.stream()
+			.map(this::toAdminReservationResponseDTO)
+			.toList();
+	}
+
 	public AdminReservationResponseDTO getAdminReservationDTOById(Integer id) {
 		Reservation reservation = getReservationById(id)
 			.orElseThrow(() -> new RuntimeException("Reservation not found"));
@@ -179,8 +241,34 @@ public class ReservationService {
 	}
 
 	public CustomerReservationResponseDTO createReservation(ReservationRequestDTO request, String username) {
+		try {
+			System.out.println("DEBUG: Starting reservation creation for user: " + username);
+			System.out.println("DEBUG: Request data: " + request);
+			
+			// Lấy user từ username
+			User user = userService.findByUsername(username)
+					.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
+		
+		// Lấy table
+		TableEntity table = tableService.getTableById(request.getTableId())
+				.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn với ID: " + request.getTableId()));
+		
+		// Validate thời gian đặt bàn phải trong tương lai
+		LocalDateTime now = LocalDateTime.now();
+		System.out.println("DEBUG: Current time: " + now);
+		System.out.println("DEBUG: Reservation datetime: " + request.getReservationDatetime());
+		System.out.println("DEBUG: Is reservation in future? " + request.getReservationDatetime().isAfter(now));
+		System.out.println("DEBUG: Minutes until reservation: " + java.time.Duration.between(now, request.getReservationDatetime()).toMinutes());
+		if (request.getReservationDatetime().isBefore(now)) {
+			throw new IllegalArgumentException("Thời gian đặt bàn phải trong tương lai! Thời gian hiện tại: " + 
+				now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + 
+				", Thời gian đặt: " + request.getReservationDatetime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+		}
+		
 		// Validate ngày nghỉ
 		DayOfWeek day = request.getReservationDatetime().getDayOfWeek();
+		System.out.println("DEBUG: Reservation day: " + day);
+		System.out.println("DEBUG: Is holiday? " + HOLIDAYS.contains(day));
 		if (HOLIDAYS.contains(day)) {
 			throw new IllegalArgumentException("Không thể đặt bàn vào ngày nghỉ (Chủ nhật)!");
 		}
@@ -190,12 +278,20 @@ public class ReservationService {
 		LocalTime closing = LocalTime.parse(schedulerConfig.closingTime); // 22:00
 		LocalTime reservationTime = request.getReservationDatetime().toLocalTime();
 		
+		System.out.println("DEBUG: Opening time: " + opening);
+		System.out.println("DEBUG: Closing time: " + closing);
+		System.out.println("DEBUG: Reservation time: " + reservationTime);
+		
 		// Thời gian chuẩn bị: 1 tiếng trước giờ mở cửa để chuẩn bị
 		LocalTime effectiveOpening = opening.plusMinutes(60); // 09:00 - bắt đầu nhận đặt bàn
 		
 		// Thời gian kết thúc đặt bàn: 2 tiếng trước giờ đóng cửa để đảm bảo đủ thời gian phục vụ
 		// (60 phút phục vụ + 30 phút dọn dẹp + 30 phút buffer)
 		LocalTime effectiveClosing = closing.minusMinutes(120); // 20:00 - kết thúc nhận đặt bàn
+		
+		System.out.println("DEBUG: Effective opening: " + effectiveOpening);
+		System.out.println("DEBUG: Effective closing: " + effectiveClosing);
+		System.out.println("DEBUG: Is reservation time valid? " + (reservationTime.isAfter(effectiveOpening) && reservationTime.isBefore(effectiveClosing)));
 		
 		if (reservationTime.isBefore(effectiveOpening) || reservationTime.isAfter(effectiveClosing)) {
 			throw new IllegalArgumentException(
@@ -204,15 +300,10 @@ public class ReservationService {
 			);
 		}
 		
-		// Lấy user từ username
-		User user = userService.findByUsername(username)
-				.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng!"));
-		
-		// Lấy table
-		TableEntity table = tableService.getTableById(request.getTableId())
-				.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn với ID: " + request.getTableId()));
-		
 		// Kiểm tra số lượng người không vượt quá sức chứa của bàn
+		System.out.println("DEBUG: Party size: " + request.getPartySize());
+		System.out.println("DEBUG: Table capacity: " + table.getCapacity());
+		System.out.println("DEBUG: Is party size valid? " + (request.getPartySize() <= table.getCapacity()));
 		if (request.getPartySize() > table.getCapacity()) {
 			throw new IllegalArgumentException(
 				"Số lượng người (" + request.getPartySize() + ") vượt quá sức chứa của bàn này (" + table.getCapacity() + " người)!"
@@ -220,13 +311,26 @@ public class ReservationService {
 		}
 		
 		// Kiểm tra không cho đặt bàn nếu thời gian đặt < min-advance-minutes so với hiện tại
-		if (request.getReservationDatetime().isBefore(LocalDateTime.now().plusMinutes(schedulerConfig.reservationMinAdvanceMinutes))) {
-			throw new IllegalArgumentException("Bạn phải đặt bàn trước ít nhất " + schedulerConfig.reservationMinAdvanceMinutes + " phút!");
+		LocalDateTime minAdvanceTime = now.plusMinutes(schedulerConfig.reservationMinAdvanceMinutes);
+		System.out.println("DEBUG: Min advance time: " + minAdvanceTime);
+		System.out.println("DEBUG: Min advance minutes: " + schedulerConfig.reservationMinAdvanceMinutes);
+		System.out.println("DEBUG: Is reservation before min advance? " + request.getReservationDatetime().isBefore(minAdvanceTime));
+		System.out.println("DEBUG: Minutes difference: " + java.time.Duration.between(now, request.getReservationDatetime()).toMinutes());
+		
+		if (request.getReservationDatetime().isBefore(minAdvanceTime)) {
+			throw new IllegalArgumentException("Bạn phải đặt bàn trước ít nhất " + schedulerConfig.reservationMinAdvanceMinutes + " phút! Thời gian hiện tại: " + 
+				LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + 
+				", Thời gian đặt tối thiểu: " + minAdvanceTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 		}
 		
 		// Kiểm tra trùng lịch đặt bàn nâng cao với thời gian nghỉ giữa ca
 		LocalDateTime newStart = request.getReservationDatetime();
 		LocalDateTime newEnd = newStart.plusMinutes(schedulerConfig.reservationDurationMinutes); // 90 phút phục vụ
+		
+		System.out.println("DEBUG: New reservation start: " + newStart);
+		System.out.println("DEBUG: New reservation end: " + newEnd);
+		System.out.println("DEBUG: Reservation duration: " + schedulerConfig.reservationDurationMinutes + " minutes");
+		System.out.println("DEBUG: Buffer after: " + schedulerConfig.reservationBufferAfterMinutes + " minutes");
 		
 		List<Reservation> existing = getAllReservations().stream()
 			.filter(r -> r.getTable().getId().equals(table.getId()))
@@ -235,9 +339,12 @@ public class ReservationService {
 				LocalDateTime oldStart = r.getReservationDatetime();
 				LocalDateTime oldEnd = oldStart.plusMinutes(schedulerConfig.reservationDurationMinutes + schedulerConfig.reservationBufferAfterMinutes);
 				// Kiểm tra xung đột: ca mới bắt đầu trước khi ca cũ kết thúc hoàn toàn
-				return newStart.isBefore(oldEnd) && newEnd.isAfter(oldStart);
+				boolean hasConflict = newStart.isBefore(oldEnd) && newEnd.isAfter(oldStart);
+				System.out.println("DEBUG: Checking conflict with reservation " + r.getId() + ": " + oldStart + " - " + oldEnd + " -> " + hasConflict);
+				return hasConflict;
 			})
 			.toList();
+		System.out.println("DEBUG: Found " + existing.size() + " conflicting reservations");
 		if (!existing.isEmpty()) {
 			throw new IllegalArgumentException(
 				"Bàn này đã có người đặt trong khung giờ này! " +
@@ -258,7 +365,13 @@ public class ReservationService {
 		reservation.setUpdatedAt(LocalDateTime.now());
 		
 		Reservation saved = saveReservation(reservation);
+		System.out.println("DEBUG: Reservation saved successfully with ID: " + saved.getId());
 		return toCustomerReservationResponseDTO(saved);
+		} catch (Exception e) {
+			System.err.println("ERROR in createReservation: " + e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	public List<CustomerReservationResponseDTO> getReservationsByUser(String username) {
@@ -293,6 +406,20 @@ public class ReservationService {
 		
 		Reservation saved = saveReservation(existing);
 		return toReservationDetailDTO(saved);
+	}
+
+	/**
+	 * Lấy chi tiết reservation theo ID cho đúng customer (bất kể trạng thái), có kiểm tra sở hữu.
+	 */
+	public ReservationDetailDTO getReservationDetailForUser(Integer reservationId, String username) {
+		User user = userService.findByUsername(username)
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user!"));
+		Reservation reservation = reservationRepository.findById(reservationId)
+			.orElseThrow(() -> new RuntimeException("Reservation not found"));
+		if (reservation.getCustomer() == null || !reservation.getCustomer().getId().equals(user.getId())) {
+			throw new RuntimeException("Bạn không có quyền xem đặt bàn này");
+		}
+		return toReservationDetailDTO(reservation);
 	}
 
 	// ===== Helper methods cho DTO mapping =====
@@ -331,6 +458,13 @@ public class ReservationService {
 		dto.setNotes(reservation.getNotes());
 		dto.setCreatedAt(reservation.getCreatedAt());
 		dto.setUpdatedAt(reservation.getUpdatedAt());
+		
+		// Map orderId if there's an associated order
+		Order order = orderService.findOrderByReservationId(reservation.getId());
+		if (order != null) {
+			dto.setOrderId(order.getId());
+		}
+		
 		return dto;
 	}
 

@@ -50,4 +50,10 @@ public class TableController {
     public void deleteTable(@PathVariable Integer id) {
         tableService.deleteTable(id);
     }
+
+    @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public AdminTableResponseDTO toggleTableActive(@PathVariable Integer id) {
+        return tableService.toggleTableActive(id);
+    }
 }

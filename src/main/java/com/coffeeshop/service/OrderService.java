@@ -1,5 +1,6 @@
 package com.coffeeshop.service;
 
+import com.coffeeshop.dto.admin.response.AdminOrderResponseDTO;
 import com.coffeeshop.dto.customer.request.CustomerOrderRequestDTO;
 import com.coffeeshop.dto.customer.response.CustomerOrderResponseDTO;
 import com.coffeeshop.dto.shared.OrderItemDTO;
@@ -54,6 +55,7 @@ public class OrderService {
         TableEntity table;
         Reservation reservation = null;
 
+        // Logic đơn giản: phải có tableId hoặc reservationId
         if (orderRequestDTO.getReservationId() != null) {
             reservation = reservationRepository.findById(orderRequestDTO.getReservationId())
                     .orElseThrow(() -> new RuntimeException("Reservation not found with id: " + orderRequestDTO.getReservationId()));
@@ -81,7 +83,7 @@ public class OrderService {
         order.setOrderNumber("ORD-" + System.currentTimeMillis());
         order.setStatus(OrderStatus.PENDING);
         order.setPaymentStatus(PaymentStatus.UNPAID);
-        order.setNotes(orderRequestDTO.getNote());
+        order.setNotes(orderRequestDTO.getNote()); // Note có thể null
         order.setQrCodePayment("ORDER-QR-" + System.currentTimeMillis());
         order.setCreatedAt(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
@@ -92,6 +94,12 @@ public class OrderService {
         for (OrderItemDTO itemDTO : orderRequestDTO.getItems()) {
             Product product = productRepository.findById(itemDTO.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found with id: " + itemDTO.getProductId()));
+            
+            // Kiểm tra product price
+            if (product.getPrice() == null) {
+                throw new RuntimeException("Product " + product.getName() + " has no price set");
+            }
+            
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
             orderItem.setQuantity(itemDTO.getQuantity());
@@ -105,6 +113,11 @@ public class OrderService {
             orderItems.add(orderItem);
         }
 
+        // Đảm bảo subtotal không âm
+        if (subtotal.compareTo(BigDecimal.ZERO) < 0) {
+            subtotal = BigDecimal.ZERO;
+        }
+
         BigDecimal taxRate = settingService.getTaxRate();
         BigDecimal taxAmount = subtotal.multiply(taxRate);
         BigDecimal totalAmount = subtotal.add(taxAmount);
@@ -113,6 +126,9 @@ public class OrderService {
         order.setTaxAmount(taxAmount);
         order.setTotalAmount(totalAmount);
 
+        // Debug logging
+        System.out.println("Order calculation - Subtotal: " + subtotal + ", Tax: " + taxAmount + ", Total: " + totalAmount);
+
         Order savedOrder = orderRepository.save(order);
         for (OrderItem item : orderItems) {
             item.setOrder(savedOrder);
@@ -120,14 +136,19 @@ public class OrderService {
         orderItemRepository.saveAll(orderItems);
 
         // Create notification for order creation
-        notificationService.createOrderNotification(
-            user, 
-            savedOrder, 
-            NotificationType.ORDER_CREATED,
-            "Đơn hàng mới được tạo",
-            "Đơn hàng " + savedOrder.getOrderNumber() + " đã được tạo thành công với tổng tiền " + 
-            savedOrder.getTotalAmount() + "đ tại bàn " + savedOrder.getTable().getTableNumber()
-        );
+        try {
+            notificationService.createOrderNotification(
+                user, 
+                savedOrder, 
+                NotificationType.ORDER_CREATED,
+                "Đơn hàng mới được tạo",
+                "Đơn hàng " + savedOrder.getOrderNumber() + " đã được tạo thành công với tổng tiền " + 
+                savedOrder.getTotalAmount() + "đ tại bàn " + savedOrder.getTable().getTableNumber()
+            );
+        } catch (Exception e) {
+            System.out.println("Warning: Could not create notification: " + e.getMessage());
+            // Không làm crash order creation vì notification không quan trọng
+        }
 
         return savedOrder;
     }
@@ -224,6 +245,20 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lấy chi tiết đơn hàng theo id cho đúng customer (bất kể trạng thái), kèm kiểm tra sở hữu.
+     */
+    public CustomerOrderResponseDTO getCustomerOrderById(String username, Integer orderId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+        if (order.getCustomer() == null || !order.getCustomer().getId().equals(user.getId())) {
+            throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
+        }
+        return toCustomerOrderResponseDTO(order);
+    }
+
     // --- Mapping methods ---
     private CustomerOrderResponseDTO toCustomerOrderResponseDTO(Order order) {
         CustomerOrderResponseDTO dto = new CustomerOrderResponseDTO();
@@ -241,6 +276,18 @@ public class OrderService {
         dto.setNotes(order.getNotes());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
+        
+        // Set amounts - quan trọng để hiển thị đúng tổng tiền
+        dto.setSubtotal(order.getSubtotal() != null ? order.getSubtotal().doubleValue() : 0.0);
+        dto.setTaxAmount(order.getTaxAmount() != null ? order.getTaxAmount().doubleValue() : 0.0);
+        dto.setTotalAmount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0);
+        
+        // Debug logging
+        System.out.println("Admin DTO mapping - Order ID: " + order.getId() + ", Subtotal: " + dto.getSubtotal() + ", Tax: " + dto.getTaxAmount() + ", Total: " + dto.getTotalAmount());
+        
+        // Debug logging
+        System.out.println("DTO mapping - Order ID: " + order.getId() + ", Subtotal: " + dto.getSubtotal() + ", Tax: " + dto.getTaxAmount() + ", Total: " + dto.getTotalAmount());
+        
         // Items
         List<CustomerOrderResponseDTO.OrderItemInfo> items = getOrderItemsByOrderId(order.getId()).stream().map(item -> {
             CustomerOrderResponseDTO.OrderItemInfo oi = new CustomerOrderResponseDTO.OrderItemInfo();
@@ -282,5 +329,73 @@ public class OrderService {
             default:
                 return NotificationType.ORDER_STATUS_CHANGED;
         }
+    }
+
+    public List<AdminOrderResponseDTO> getAllAdminOrderDTOs() {
+        List<Order> orders = orderRepository.findAll();
+        return orders.stream()
+            .map(this::convertToAdminOrderResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    public AdminOrderResponseDTO getAdminOrderDTOById(Integer id) {
+        Order order = getOrderById(id);
+        return convertToAdminOrderResponseDTO(order);
+    }
+    
+    public AdminOrderResponseDTO convertToAdminOrderResponseDTO(Order order) {
+        // Chuyển đổi entity Order sang AdminOrderResponseDTO phục vụ API cho ADMIN
+        AdminOrderResponseDTO dto = new AdminOrderResponseDTO();
+
+        // Thông tin cơ bản của đơn hàng
+        dto.setId(order.getId());
+        dto.setOrderNumber(order.getOrderNumber());
+        dto.setReservationId(order.getReservation() != null ? order.getReservation().getId() : null);
+        dto.setStatus(order.getStatus() != null ? order.getStatus().name() : null);
+        dto.setPaymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null);
+        dto.setPaymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null);
+        dto.setNotes(order.getNotes());
+        dto.setCreatedAt(order.getCreatedAt());
+        dto.setUpdatedAt(order.getUpdatedAt());
+
+        // Thông tin khách hàng
+        if (order.getCustomer() != null) {
+            AdminOrderResponseDTO.CustomerInfo customerInfo = new AdminOrderResponseDTO.CustomerInfo();
+            customerInfo.setId(order.getCustomer().getId());
+            customerInfo.setUsername(order.getCustomer().getUsername());
+            customerInfo.setFullName(order.getCustomer().getFullName());
+            customerInfo.setPhone(order.getCustomer().getPhone());
+            dto.setCustomer(customerInfo);
+        }
+
+        // Thông tin bàn
+        if (order.getTable() != null) {
+            AdminOrderResponseDTO.TableInfo tableInfo = new AdminOrderResponseDTO.TableInfo();
+            tableInfo.setId(order.getTable().getId());
+            tableInfo.setTableNumber(order.getTable().getTableNumber());
+            tableInfo.setLocation(order.getTable().getLocation());
+            dto.setTable(tableInfo);
+        }
+
+        // Set amounts - quan trọng để hiển thị đúng tổng tiền
+        dto.setSubtotal(order.getSubtotal() != null ? order.getSubtotal().doubleValue() : 0.0);
+        dto.setTaxAmount(order.getTaxAmount() != null ? order.getTaxAmount().doubleValue() : 0.0);
+        dto.setTotalAmount(order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0);
+
+        // Danh sách items của đơn
+        List<AdminOrderResponseDTO.OrderItemInfo> itemInfos = getOrderItemsByOrderId(order.getId()).stream()
+            .map(item -> {
+                AdminOrderResponseDTO.OrderItemInfo info = new AdminOrderResponseDTO.OrderItemInfo();
+                info.setId(item.getId());
+                info.setProductName(item.getProduct() != null ? item.getProduct().getName() : null);
+                info.setQuantity(item.getQuantity());
+                info.setUnitPrice(item.getUnitPrice() != null ? item.getUnitPrice().doubleValue() : null);
+                info.setTotalPrice(item.getTotalPrice() != null ? item.getTotalPrice().doubleValue() : null);
+                return info;
+            })
+            .collect(Collectors.toList());
+        dto.setItems(itemInfos);
+
+        return dto;
     }
 }

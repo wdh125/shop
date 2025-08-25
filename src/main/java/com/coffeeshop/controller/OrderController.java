@@ -30,4 +30,15 @@ public class OrderController {
     public List<CustomerOrderResponseDTO> getMyOrders(@AuthenticationPrincipal UserDetails userDetails) {
         return orderService.getCustomerOrdersByUsername(userDetails.getUsername());
     }
+
+    /**
+     * API trả về chi tiết một đơn hàng của chính khách hàng đang đăng nhập, bất kể trạng thái.
+     * Luôn trả về đầy đủ thông tin DTO nếu đơn thuộc về customer hiện tại.
+     */
+    @GetMapping("/my-orders/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public CustomerOrderResponseDTO getMyOrderById(@PathVariable Integer id, @AuthenticationPrincipal UserDetails userDetails) {
+        return orderService.getCustomerOrderById(userDetails.getUsername(), id);
+    }
+
 }

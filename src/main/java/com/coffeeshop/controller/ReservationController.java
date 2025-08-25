@@ -35,8 +35,13 @@ public class ReservationController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<AdminReservationResponseDTO> getAllReservations() {
-        return reservationService.getAllAdminReservationDTOs();
+    public List<AdminReservationResponseDTO> getAllReservations(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) Integer partySize,
+            @RequestParam(required = false) String search) {
+        return reservationService.getAllAdminReservationDTOs(status, fromDate, toDate, partySize, search);
     }
 
     @GetMapping("/{id}")
@@ -58,6 +63,15 @@ public class ReservationController {
     public List<CustomerReservationResponseDTO> getReservationsByCurrentUser(
             @AuthenticationPrincipal UserDetails userDetails) {
         return reservationService.getReservationsByUser(userDetails.getUsername());
+    }
+
+    /**
+     * API chi tiết reservation của chính customer theo ID (bất kể trạng thái), có kiểm tra sở hữu.
+     */
+    @GetMapping("/user/me/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ReservationDetailDTO getMyReservationById(@PathVariable Integer id, @AuthenticationPrincipal UserDetails userDetails) {
+        return reservationService.getReservationDetailForUser(id, userDetails.getUsername());
     }
 
     @PutMapping("/{id}/cancel")

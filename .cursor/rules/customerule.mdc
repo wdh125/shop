@@ -1,0 +1,22 @@
+---
+description: "CoffeeShop Project Rules"
+globs: ["src/**/*.java", "src/**/*.vue"]
+alwaysApply: true
+---
+
+- Tech stack: Spring Boot 3.x, JDK 21.0.4, MySQL.
+- API must always return DTOs, not Entities.
+- Use plural table names (orders, products, categories, ...).
+- Roles: ADMIN, CUSTOMER.
+- Project structure:
+  - config/
+  - controller/(admin|auth|customer|view)
+  - dto/(request|response/…)
+  - entity/
+  - repository/
+  - service/impl/
+  - exception/
+- No Lombok usage allowed.
+- Code must have comments explaining logic.
+- If frontend is Vue.js:
+  - Use Vue 3 + Pinia.

@@ -61,6 +61,15 @@ public class PaymentController {
     }
 
     /**
+     * API chi tiết payment của chính customer theo ID (bất kể trạng thái), có kiểm tra sở hữu.
+     */
+    @GetMapping("/my-payments/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public CustomerPaymentResponseDTO getMyPaymentById(@PathVariable Integer id, @AuthenticationPrincipal UserDetails userDetails) {
+        return paymentService.getCustomerPaymentDTOByIdAndUsername(id, userDetails.getUsername());
+    }
+
+    /**
      * API lấy lịch sử thanh toán của một khách hàng cụ thể.
      */
     @GetMapping("/by-customer/{customerId}")

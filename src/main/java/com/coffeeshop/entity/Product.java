@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+// Entity đại diện cho bảng products trong database
 @Entity
 @Table(name = "products")
 public class Product {
@@ -21,34 +22,34 @@ public class Product {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "category_id", nullable = false)
-	private Category category;
+	private Category category; // Danh mục sản phẩm
 
 	@Column(nullable = false, length = 150)
-	private String name;
+	private String name; // Tên sản phẩm
 
 	@Column(columnDefinition = "TEXT")
-	private String description;
+	private String description; // Mô tả chi tiết
 
 	@Column(name = "price", nullable = false)
-	private java.math.BigDecimal price;
+	private java.math.BigDecimal price; // Giá bán
 
 	@Column(length = 255)
-	private String imageUrl;
+	private String imageUrl; // Đường dẫn ảnh sản phẩm
 
 	@Column(nullable = false)
-	private Boolean isAvailable = true;
+	private Boolean isAvailable = true; // Trạng thái có sẵn
 
 	@Column
-	private Integer preparationTime = 10;
+	private Integer preparationTime = 10; // Thời gian chuẩn bị (phút)
 
 	@Column
-	private Integer displayOrder = 0;
+	private Integer displayOrder = 0; // Thứ tự hiển thị
 
 	@Column(nullable = false)
-	private LocalDateTime createdAt;
+	private LocalDateTime createdAt; // Thời gian tạo
 
 	@Column(nullable = false)
-	private LocalDateTime updatedAt;
+	private LocalDateTime updatedAt; // Thời gian cập nhật cuối
 
 	public Integer getId() {
 		return id;

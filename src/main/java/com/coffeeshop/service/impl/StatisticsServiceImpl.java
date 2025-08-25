@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class StatisticsServiceImpl implements StatisticsService {
@@ -34,6 +36,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Override
     public OverviewStatisticsResponseDTO getOverviewStatistics() {
         OverviewStatisticsResponseDTO dto = new OverviewStatisticsResponseDTO();
+        
         // Tổng doanh thu: sum totalAmount các order có paymentStatus = PAID
         Double totalRevenue = orderRepository.findAll().stream()
             .filter(o -> o.getPaymentStatus() == com.coffeeshop.enums.PaymentStatus.PAID)
@@ -44,6 +47,15 @@ public class StatisticsServiceImpl implements StatisticsService {
         dto.setTotalCustomers((int) userRepository.count());
         dto.setTotalProducts((int) productRepository.count());
         dto.setTotalCategories((int) categoryRepository.count());
+        
+        // Tính khách hàng mới trong tháng hiện tại
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        int newCustomers = (int) userRepository.findAll().stream()
+            .filter(u -> u.getCreatedAt() != null && 
+                        u.getCreatedAt().toLocalDate().isAfter(currentMonth.minusDays(1)))
+            .count();
+        dto.setNewCustomers(newCustomers);
+        
         return dto;
     }
 
@@ -52,12 +64,36 @@ public class StatisticsServiceImpl implements StatisticsService {
         RevenueStatisticsResponseDTO dto = new RevenueStatisticsResponseDTO();
         dto.setFromDate(from);
         dto.setToDate(to);
+        
+        // Tính tổng doanh thu
         Double totalRevenue = orderRepository.findAll().stream()
             .filter(o -> o.getPaymentStatus() == com.coffeeshop.enums.PaymentStatus.PAID)
             .filter(o -> !o.getCreatedAt().toLocalDate().isBefore(from) && !o.getCreatedAt().toLocalDate().isAfter(to))
             .mapToDouble(o -> o.getTotalAmount().doubleValue())
             .sum();
         dto.setTotalRevenue(totalRevenue);
+        
+        // Tính doanh thu theo ngày
+        List<Double> dailyRevenue = new ArrayList<>();
+        List<String> dates = new ArrayList<>();
+        
+        LocalDate currentDate = from;
+        while (!currentDate.isAfter(to)) {
+            final LocalDate date = currentDate;
+            Double dayRevenue = orderRepository.findAll().stream()
+                .filter(o -> o.getPaymentStatus() == com.coffeeshop.enums.PaymentStatus.PAID)
+                .filter(o -> o.getCreatedAt().toLocalDate().equals(date))
+                .mapToDouble(o -> o.getTotalAmount().doubleValue())
+                .sum();
+            
+            dailyRevenue.add(dayRevenue);
+            dates.add(currentDate.getDayOfMonth() + "/" + currentDate.getMonthValue());
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        dto.setDailyRevenue(dailyRevenue);
+        dto.setDates(dates);
+        
         return dto;
     }
 
@@ -92,6 +128,11 @@ public class StatisticsServiceImpl implements StatisticsService {
                         info.setEmail(orders.get(0).getCustomer().getEmail());
                         info.setTotalSpent(totalSpent);
                         info.setTotalOrders(totalOrders);
+                        info.setDescription("Khách hàng VIP - " + totalOrders + " đơn hàng");
+                        // Set profile image if available
+                        if (orders.get(0).getCustomer().getProfileImage() != null) {
+                            info.setProfileImage(orders.get(0).getCustomer().getProfileImage());
+                        }
                         return info;
                     }
                 )

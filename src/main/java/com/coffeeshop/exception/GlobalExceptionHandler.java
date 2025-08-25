@@ -22,6 +22,7 @@ import com.coffeeshop.dto.common.ErrorResponseDTO;
 import com.coffeeshop.dto.common.FieldErrorDTO;
 import com.coffeeshop.dto.common.ValidationErrorResponseDTO;
 
+// Global exception handler để xử lý tất cả exceptions trong ứng dụng
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -29,6 +30,7 @@ public class GlobalExceptionHandler {
 	private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS");
 
+	// Xử lý exception khi không tìm thấy user
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<ErrorResponseDTO> handleUserNotFoundException(UserNotFoundException ex, WebRequest request) {
 
@@ -46,6 +48,7 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
 	}
 
+	// Xử lý exception khi user đã tồn tại
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponseDTO> handleUserAlreadyExistsException(UserAlreadyExistsException ex,
 			WebRequest request) {
@@ -64,6 +67,7 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
 	}
 
+	// Xử lý exception khi thông tin đăng nhập không đúng
 	@ExceptionHandler(InvalidCredentialsException.class)
 	public ResponseEntity<ErrorResponseDTO> handleInvalidCredentialsException(InvalidCredentialsException ex,
 			WebRequest request) {
@@ -79,6 +83,7 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
 	}
 
+	// Xử lý exception khi không tìm thấy resource (order, product, reservation)
 	@ExceptionHandler({ OrderNotFoundException.class, ProductNotFoundException.class,
 			ReservationNotFoundException.class })
 	public ResponseEntity<ErrorResponseDTO> handleResourceNotFoundException(BusinessLogicException ex,

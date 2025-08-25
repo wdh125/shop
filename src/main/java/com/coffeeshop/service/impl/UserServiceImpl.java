@@ -58,7 +58,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Integer id) {
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException("Không tìm thấy user!", id));
+        user.setIsActive(false);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
     
     @Override

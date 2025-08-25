@@ -6,28 +6,18 @@ import com.coffeeshop.dto.auth.RefreshTokenRequestDTO;
 import com.coffeeshop.dto.auth.RefreshTokenResponseDTO;
 import com.coffeeshop.dto.auth.RegisterRequestDTO;
 
-/**
- * Authentication service interface for managing user authentication
- */
+// Interface service xử lý xác thực người dùng
 public interface AuthService {
 
-    /**
-     * Authenticate user with credentials
-     */
+    // Đăng nhập người dùng với thông tin đăng nhập
     AuthResponseDTO login(AuthRequestDTO request);
 
-    /**
-     * Refresh access token using refresh token
-     */
+    // Làm mới access token bằng refresh token
     RefreshTokenResponseDTO refreshToken(RefreshTokenRequestDTO request);
 
-    /**
-     * Logout user by invalidating refresh token
-     */
+    // Đăng xuất người dùng bằng cách vô hiệu hóa refresh token
     String logout(String refreshToken);
 
-    /**
-     * Register new user
-     */
+    // Đăng ký người dùng mới
     String register(RegisterRequestDTO request);
 }

@@ -42,8 +42,26 @@ public class CategoryServiceImpl implements CategoryService {
 		Category category = dto.getId() != null ? getCategoryById(dto.getId()).orElse(new Category()) : new Category();
 		category.setName(dto.getName());
 		category.setDescription(dto.getDescription());
-		category.setIsActive(dto.getIsActive());
-		category.setDisplayOrder(dto.getDisplayOrder());
+		
+		// Xử lý isActive: nếu DTO không có giá trị thì giữ nguyên giá trị cũ
+		if (dto.getIsActive() != null) {
+			category.setIsActive(dto.getIsActive());
+		} else if (category.getId() == null) {
+			// Nếu là category mới thì mặc định là active
+			category.setIsActive(true);
+		}
+		// Nếu không thì giữ nguyên giá trị cũ
+		
+		// Xử lý displayOrder: nếu DTO không có giá trị thì giữ nguyên giá trị cũ
+		if (dto.getDisplayOrder() != null) {
+			category.setDisplayOrder(dto.getDisplayOrder());
+		} else if (category.getId() == null) {
+			// Nếu là category mới thì mặc định là 0
+			category.setDisplayOrder(0);
+		}
+		// Nếu không thì giữ nguyên giá trị cũ
+		
+		category.setImageUrl(dto.getImageUrl()); 
 		category.setUpdatedAt(LocalDateTime.now());
 		if (category.getId() == null) category.setCreatedAt(LocalDateTime.now());
 		return categoryRepository.save(category);
@@ -51,7 +69,13 @@ public class CategoryServiceImpl implements CategoryService {
 
 	@Override
 	public void deleteCategory(Integer id) {
-		categoryRepository.deleteById(id);
+		Optional<Category> categoryOpt = categoryRepository.findById(id);
+		if (categoryOpt.isPresent()) {
+			Category category = categoryOpt.get();
+			category.setIsActive(false);
+			category.setUpdatedAt(LocalDateTime.now());
+			categoryRepository.save(category);
+		}
 	}
 
 	@Override
@@ -179,5 +203,18 @@ public class CategoryServiceImpl implements CategoryService {
 				return AdminCategoryResponseDTO.fromEntity(c, products);
 			})
 			.toList();
+	}
+
+	@Override
+	public CustomerCategoryResponseDTO getActiveCustomerCategoryDTOById(Integer id) {
+		Category category = getCategoryById(id)
+			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
+		if (!Boolean.TRUE.equals(category.getIsActive())) {
+			throw new IllegalArgumentException("Danh mục này đang không active!");
+		}
+		int availableProductCount = (int) productService.getAllProducts().stream()
+			.filter(p -> p.getCategory() != null && p.getCategory().getId().equals(category.getId()) && Boolean.TRUE.equals(p.getIsAvailable()))
+			.count();
+		return CustomerCategoryResponseDTO.fromEntity(category, availableProductCount);
 	}
 }

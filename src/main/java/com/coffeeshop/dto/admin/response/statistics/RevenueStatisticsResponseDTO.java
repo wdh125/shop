@@ -1,11 +1,14 @@
 package com.coffeeshop.dto.admin.response.statistics;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class RevenueStatisticsResponseDTO {
     private LocalDate fromDate;
     private LocalDate toDate;
     private double totalRevenue;
+    private List<Double> dailyRevenue;
+    private List<String> dates;
 
     // Constructor mặc định
     public RevenueStatisticsResponseDTO() {}
@@ -16,4 +19,8 @@ public class RevenueStatisticsResponseDTO {
     public void setToDate(LocalDate toDate) { this.toDate = toDate; }
     public double getTotalRevenue() { return totalRevenue; }
     public void setTotalRevenue(double totalRevenue) { this.totalRevenue = totalRevenue; }
+    public List<Double> getDailyRevenue() { return dailyRevenue; }
+    public void setDailyRevenue(List<Double> dailyRevenue) { this.dailyRevenue = dailyRevenue; }
+    public List<String> getDates() { return dates; }
+    public void setDates(List<String> dates) { this.dates = dates; }
 } 

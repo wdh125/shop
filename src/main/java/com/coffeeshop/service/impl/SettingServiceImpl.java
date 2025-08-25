@@ -39,7 +39,13 @@ public class SettingServiceImpl implements SettingService {
 
 	@Override
 	public void deleteSetting(String key) {
-		settingRepository.deleteById(key);
+		Optional<Setting> settingOpt = settingRepository.findBySettingKey(key);
+		if (settingOpt.isPresent()) {
+			Setting setting = settingOpt.get();
+			setting.setIsActive(false);
+			setting.setUpdatedAt(LocalDateTime.now());
+			settingRepository.save(setting);
+		}
 	}
 
 	@Override

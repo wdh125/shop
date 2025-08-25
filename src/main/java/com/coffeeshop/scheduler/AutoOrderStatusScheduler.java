@@ -11,13 +11,14 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Component
+// TẠM TẮT ĐỂ TRÁNH XUNG ĐỘT VỚI AutoScheduler
+// @Component
 public class AutoOrderStatusScheduler {
     @Autowired private OrderRepository orderRepository;
     @Autowired private SchedulerConfig schedulerConfig;
 
     // 1. PENDING -> CANCELLED nếu quá X phút
-    @Scheduled(fixedDelay = 60000)
+    // @Scheduled(fixedDelay = 60000)
     public void autoCancelPendingOrders() {
         LocalDateTime now = LocalDateTime.now();
         List<Order> pendingOrders = orderRepository.findByStatus(OrderStatus.PENDING);
@@ -31,7 +32,7 @@ public class AutoOrderStatusScheduler {
     }
 
     // 2. PENDING + paymentStatus = paid -> PREPARING nếu updatedAt quá Y phút
-    @Scheduled(fixedDelay = 60000)
+    // @Scheduled(fixedDelay = 60000)
     public void autoPendingPaidToPreparing() {
         LocalDateTime now = LocalDateTime.now();
         List<Order> pendingOrders = orderRepository.findByStatus(OrderStatus.PENDING);
@@ -46,7 +47,7 @@ public class AutoOrderStatusScheduler {
     }
 
     // 3. SERVED -> COMPLETED nếu updatedAt quá Z phút
-    @Scheduled(fixedDelay = 60000)
+    // @Scheduled(fixedDelay = 60000)
     public void autoServedToCompleted() {
         LocalDateTime now = LocalDateTime.now();
         List<Order> servedOrders = orderRepository.findByStatus(OrderStatus.SERVED);

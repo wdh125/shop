@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+// Utility class xử lý JWT token
 @Component
 public class JwtUtils {
 
@@ -27,7 +28,7 @@ public class JwtUtils {
     @Autowired
     private UserRepository userRepository;
 
-    // Tạo token từ username
+    // Tạo JWT token từ username
     public String generateJwtToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -40,7 +41,7 @@ public class JwtUtils {
                 .compact();
     }
 
-    // Lấy username từ token
+    // Lấy username từ JWT token
     public String getUsernameFromJwtToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(jwtSecret.getBytes())
@@ -50,7 +51,7 @@ public class JwtUtils {
                 .getSubject();
     }
 
-    // Kiểm tra token hợp lệ
+    // Kiểm tra JWT token có hợp lệ không
     public boolean validateJwtToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -72,7 +73,7 @@ public class JwtUtils {
         return false;
     }
 
-    // Get user ID from authentication
+    // Lấy user ID từ authentication object
     public Integer getUserIdFromAuthentication(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();

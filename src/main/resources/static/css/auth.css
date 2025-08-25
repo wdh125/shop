@@ -1,0 +1,191 @@
+/* ============================= */
+/* Vietnamese Input Prevention   */
+/* Claude.ai's Clean Approach   */
+/* ============================= */
+
+.english-only {
+    ime-mode: disabled !important;
+    -webkit-ime-mode: disabled !important;
+    -moz-ime-mode: disabled !important;
+    -ms-ime-mode: disabled !important;
+}
+
+/* Additional styles for better UX */
+.english-only:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Vietnamese IME warning styles */
+.vietnamese-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+}
+
+.vietnamese-warning.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Password strength indicator styles */
+.password-strength {
+    margin-top: 8px;
+}
+
+.password-strength .progress {
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.password-strength .progress-bar {
+    transition: all 0.3s ease;
+}
+
+/* Form validation styles */
+.form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Enhanced button styles for auth forms */
+.btn-auth {
+    padding: 12px 24px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-auth:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Input group toggle button styling */
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #495057;
+}
+
+/* Alert styling improvements */
+.alert {
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-success {
+    background-color: #d1edff;
+    color: #0c5460;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #cce8ff;
+    color: #0c5460;
+}
+
+/* Loading spinner for form submissions */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Card improvements for auth pages */
+.auth-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.auth-card .card-body {
+    padding: 2.5rem;
+}
+
+/* Typography improvements */
+.auth-title {
+    font-weight: 300;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .auth-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .btn-auth {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .vietnamese-warning {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+}
+
+/* Focus improvements for accessibility */
+.form-control:focus,
+.btn:focus,
+.form-check-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Custom checkbox styling */
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+/* Link styling improvements */
+.auth-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+    color: #5a6fd8;
+    text-decoration: underline;
+}

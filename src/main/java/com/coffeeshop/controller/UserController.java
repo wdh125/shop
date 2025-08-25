@@ -4,14 +4,17 @@ import com.coffeeshop.dto.shared.request.UserProfileUpdateRequestDTO;
 import com.coffeeshop.dto.admin.response.AdminUserResponseDTO;
 import com.coffeeshop.dto.admin.request.AdminUserRequestDTO;
 import com.coffeeshop.service.UserService;
+import com.coffeeshop.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
-
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -20,6 +23,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
@@ -29,12 +34,26 @@ public class UserController {
 
     @PutMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserDetails userDetails, 
-                                         @Valid @RequestBody UserProfileUpdateRequestDTO request) {
-        return ResponseEntity.ok(userService.updateUserProfile(userDetails.getUsername(), request));
+    public ResponseEntity<?> updateProfile(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @ModelAttribute UserProfileUpdateRequestDTO request,
+        @RequestParam(value = "image", required = false) MultipartFile image
+    ) {
+        if (image != null && !image.isEmpty()) {
+            try {
+                String imageUrl = fileStorageService.saveFile(image);
+                request.setProfileImage(imageUrl);
+            } catch (IOException e) {
+                // Trả về lỗi cho FE nếu lưu thất bại
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Lưu ảnh thất bại: " + e.getMessage());
+            }
+        }
+        userService.updateUserProfile(userDetails.getUsername(), request);
+        return ResponseEntity.ok("Cập nhật thông tin thành công!");
     }
 
-    // ========== ADMIN APIs ==========
+// ========== ADMIN APIs ==========
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
